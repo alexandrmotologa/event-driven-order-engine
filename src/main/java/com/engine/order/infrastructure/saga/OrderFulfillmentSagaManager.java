@@ -36,17 +36,20 @@ public class OrderFulfillmentSagaManager {
     private final OrderRepositoryPort orderRepositoryPort;
     private final KafkaTemplate<String, String> kafkaTemplate;
     private final ObjectMapper objectMapper;
+    private final com.engine.order.infrastructure.metrics.OrderMetrics orderMetrics;
 
     public OrderFulfillmentSagaManager(
             SagaInstanceJpaRepository sagaInstanceJpaRepository,
             OrderRepositoryPort orderRepositoryPort,
             KafkaTemplate<String, String> kafkaTemplate,
-            ObjectMapper objectMapper
+            ObjectMapper objectMapper,
+            com.engine.order.infrastructure.metrics.OrderMetrics orderMetrics
     ) {
         this.sagaInstanceJpaRepository = Objects.requireNonNull(sagaInstanceJpaRepository, "sagaInstanceJpaRepository must not be null");
         this.orderRepositoryPort = Objects.requireNonNull(orderRepositoryPort, "orderRepositoryPort must not be null");
         this.kafkaTemplate = Objects.requireNonNull(kafkaTemplate, "kafkaTemplate must not be null");
         this.objectMapper = Objects.requireNonNull(objectMapper, "objectMapper must not be null");
+        this.orderMetrics = Objects.requireNonNull(orderMetrics, "orderMetrics must not be null");
     }
 
     @Transactional
@@ -111,9 +114,11 @@ public class OrderFulfillmentSagaManager {
                 Order order = orderRepositoryPort.findById(OrderId.of(orderId)).orElseThrow();
                 if (order.getState() == com.engine.order.domain.model.OrderState.CREATED) {
                     order = order.validate();
+                    orderMetrics.recordStateTransition("CREATED", "VALIDATED");
                 }
                 if (order.getState() == com.engine.order.domain.model.OrderState.VALIDATED) {
                     order = order.initiatePayment();
+                    orderMetrics.recordStateTransition("VALIDATED", "PAYMENT_PENDING");
                 }
                 orderRepositoryPort.save(order);
 
@@ -129,6 +134,7 @@ public class OrderFulfillmentSagaManager {
             } else if ("InventoryReservationFailedEvent".equals(eventType) || root.has("reason")) {
                 String reason = root.path("reason").asText("Inventory unavailable");
                 log.warn("SAGA [{}]: Inventory reservation failed: {}. Compensating saga.", sagaId, reason);
+                orderMetrics.recordSagaFailure("OrderFulfillmentSaga", reason);
                 saga.markCompensated("Inventory reservation failed: " + reason);
                 sagaInstanceJpaRepository.save(saga);
 
@@ -137,6 +143,7 @@ public class OrderFulfillmentSagaManager {
                 if (order.getState().canTransitionTo(com.engine.order.domain.model.OrderState.CANCELLED)) {
                     Order cancelled = order.cancel("Out of stock / Inventory reservation failed: " + reason);
                     orderRepositoryPort.save(cancelled);
+                    orderMetrics.recordStateTransition(order.getState().name(), "CANCELLED");
                 }
             }
         } catch (Exception ex) {
@@ -176,8 +183,11 @@ public class OrderFulfillmentSagaManager {
                 // Order transitions: PAYMENT_PENDING -> PAID -> INVENTORY_ALLOCATED -> COMPLETED
                 Order order = orderRepositoryPort.findById(OrderId.of(orderId)).orElseThrow();
                 order = order.markPaid(txId);
+                orderMetrics.recordStateTransition("PAYMENT_PENDING", "PAID");
                 order = order.allocateInventory();
+                orderMetrics.recordStateTransition("PAID", "INVENTORY_ALLOCATED");
                 order = order.complete();
+                orderMetrics.recordStateTransition("INVENTORY_ALLOCATED", "COMPLETED");
                 orderRepositoryPort.save(order);
 
                 saga.markCompleted();
@@ -187,6 +197,7 @@ public class OrderFulfillmentSagaManager {
             } else if ("PaymentFailedEvent".equals(eventType) || root.has("reason")) {
                 String reason = root.path("reason").asText("Payment declined");
                 log.warn("SAGA [{}]: Payment failed: {}. Triggering COMPENSATING TRANSACTIONS.", sagaId, reason);
+                orderMetrics.recordSagaFailure("OrderFulfillmentSaga", reason);
 
                 saga.transitionTo("COMPENSATING_INVENTORY", SagaStatus.COMPENSATING_INVENTORY);
                 saga.setErrorReason(reason);
@@ -205,6 +216,7 @@ public class OrderFulfillmentSagaManager {
                 if (order.getState().canTransitionTo(com.engine.order.domain.model.OrderState.CANCELLED)) {
                     Order cancelled = order.cancel("Cancelled due to payment authorization failure: " + reason);
                     orderRepositoryPort.save(cancelled);
+                    orderMetrics.recordStateTransition(order.getState().name(), "CANCELLED");
                 }
 
                 saga.markCompensated("Payment failed: " + reason);

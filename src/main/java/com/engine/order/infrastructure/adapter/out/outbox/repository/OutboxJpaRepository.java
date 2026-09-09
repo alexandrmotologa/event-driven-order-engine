@@ -27,4 +27,6 @@ public interface OutboxJpaRepository extends JpaRepository<OutboxMessageJpaEntit
     );
 
     List<OutboxMessageJpaEntity> findByStatusOrderByCreatedAtAsc(OutboxStatus status, Pageable pageable);
+
+    long countByStatus(OutboxStatus status);
 }

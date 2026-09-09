@@ -1,0 +1,116 @@
+{
+  "annotations": {
+    "list": []
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "id": 1,
+      "title": "Order Processing & Domain Metrics",
+      "type": "row"
+    },
+    {
+      "title": "Order State Transitions Rate",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 1 },
+      "id": 2,
+      "targets": [
+        {
+          "expr": "sum by (from_state, to_state) (rate(orders_state_transitions_count_total[1m]))",
+          "legendFormat": "{{from_state}} -> {{to_state}}"
+        }
+      ]
+    },
+    {
+      "title": "Saga Failure & Compensation Rate",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 1 },
+      "id": 3,
+      "targets": [
+        {
+          "expr": "sum by (saga_name, reason) (rate(orders_saga_failures_count_total[1m]))",
+          "legendFormat": "{{saga_name}} ({{reason}})"
+        }
+      ]
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 9 },
+      "id": 4,
+      "title": "Transactional Outbox & Relay Metrics",
+      "type": "row"
+    },
+    {
+      "title": "Transactional Outbox Publishing Latency (p95)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 10 },
+      "id": 5,
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(orders_outbox_publishing_latency_seconds_bucket[1m])) by (le))",
+          "legendFormat": "p95 Latency"
+        }
+      ]
+    },
+    {
+      "title": "Pending Outbox Messages Lag",
+      "type": "stat",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 10 },
+      "id": 6,
+      "targets": [
+        {
+          "expr": "orders_outbox_pending_count",
+          "legendFormat": "Pending Messages"
+        }
+      ]
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 18 },
+      "id": 7,
+      "title": "Resilience & Circuit Breakers",
+      "type": "row"
+    },
+    {
+      "title": "Circuit Breaker State (0=Closed, 1=Open, 2=Half-Open)",
+      "type": "stat",
+      "gridPos": { "h": 6, "w": 12, "x": 0, "y": 19 },
+      "id": 8,
+      "targets": [
+        {
+          "expr": "resilience4j_circuitbreaker_state",
+          "legendFormat": "{{name}} ({{state}})"
+        }
+      ]
+    },
+    {
+      "title": "Circuit Breaker Call Rates",
+      "type": "timeseries",
+      "gridPos": { "h": 6, "w": 12, "x": 12, "y": 19 },
+      "id": 9,
+      "targets": [
+        {
+          "expr": "rate(resilience4j_circuitbreaker_calls_seconds_count[1m])",
+          "legendFormat": "{{name}} - {{kind}}"
+        }
+      ]
+    }
+  ],
+  "refresh": "5s",
+  "schemaVersion": 38,
+  "style": "dark",
+  "tags": ["order-engine", "saga", "outbox", "resilience"],
+  "time": {
+    "from": "now-15m",
+    "to": "now"
+  },
+  "title": "Event-Driven Order Processing Engine",
+  "uid": "order-engine-overview"
+}

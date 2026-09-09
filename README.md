@@ -90,7 +90,21 @@ stateDiagram-v2
   - Simulated downstream microservices (`SimulatedInventoryService` and `SimulatedPaymentService`) with configurable failure scenarios.
   - Dead Letter Queue (`order.events.dlq`) and topics (`inventory.commands`, `inventory.replies`, `payment.commands`, `payment.replies`).
   - Quality Gate: Comprehensive integration tests covering Happy Path fulfillment, payment failure compensation, and inventory out-of-stock rollback.
-- [ ] **Level 4: Enterprise Production-Ready (Observability, CQRS & Resilience)** *(Planned)*
+- [x] **Level 4: Enterprise Production-Ready (Observability, CQRS & Resilience)**
+  - **CQRS Read Projection**:
+    - Denormalized `order_summary_view` table via Flyway `V4__init_cqrs_read_model.sql`.
+    - `OrderSummaryProjectionConsumer` asynchronously listening to `order.events` to maintain optimized query read projections.
+    - High-throughput query endpoints: `GET /api/v1/orders/summary` (with filters for customer & status) and `GET /api/v1/orders/summary/{orderId}`.
+  - **Distributed Tracing & Metrics Observability**:
+    - Micrometer + OpenTelemetry OTLP integration propagating W3C `traceparent` context across REST, Outbox, and Kafka record headers.
+    - Custom Prometheus business metrics: `orders.state.transitions.count`, `orders.saga.failures.count`, `orders.outbox.publishing.latency`, and `orders.outbox.pending.count`.
+    - Spring Boot Actuator readiness and liveness health probes configured (`/actuator/health/readiness`, `/actuator/health/liveness`).
+    - Complete observability stack in `docker-compose.yml`: Prometheus (9090), Grafana (3000) with pre-provisioned dashboard, and Jaeger All-in-One (16686, 4317, 4318).
+  - **Resilience & Fault Tolerance (Resilience4j)**:
+    - `@CircuitBreaker` and `@Retry` with exponential backoff on external payment gateways with graceful fallback routines.
+  - **Production Packaging**:
+    - Multi-stage `Dockerfile` leveraging Java 21 Generational ZGC (`-XX:+UseZGC -XX:+ZGenerational`) and Virtual Threads (`spring.threads.virtual.enabled=true`).
+  - **Quality Gate**: Integration tests verifying asynchronous CQRS projection, Circuit Breaker state transitions/fallback, and Prometheus metric telemetry.
 
 ---
 
@@ -98,10 +112,13 @@ stateDiagram-v2
 
 - **Language**: Java 21 LTS (Virtual Threads, Records, Sealed Interfaces, Pattern Matching)
 - **Framework**: Spring Boot 3.3+
-- **Database**: PostgreSQL 16+ (with Flyway migrations)
+- **Database**: PostgreSQL 16+ (with Flyway migrations V1–V4)
+- **Messaging**: Apache Kafka 3.7+ (KRaft mode)
+- **Resilience**: Resilience4j 2.2.0 (CircuitBreaker, Retry, Fallback)
+- **Observability**: Micrometer, OpenTelemetry OTLP, Prometheus, Grafana, Jaeger
 - **Architecture Enforcement**: ArchUnit 1.3.0
 - **Documentation**: SpringDoc OpenAPI 2.6.0 / Swagger UI
-- **Testing**: JUnit 5, AssertJ, Mockito, Testcontainers
+- **Testing**: JUnit 5, AssertJ, Mockito, Spring Kafka Test, EmbeddedKafka
 
 ---
 
@@ -110,21 +127,35 @@ stateDiagram-v2
 ### Prerequisites
 - JDK 21+ installed and configured on `PATH`
 - Maven 3.9+
-- PostgreSQL 14+ (or Docker)
+- Docker & Docker Compose (optional for full multi-container stack)
 
 ### Build and Run Tests
 ```bash
-mvn clean test
+./mvnw clean test
 ```
+
+### Run Multi-Container Infrastructure
+```bash
+docker-compose up -d
+```
+Services exposed:
+- **PostgreSQL**: `localhost:5432`
+- **Apache Kafka**: `localhost:9092`
+- **Kafdrop (Kafka UI)**: [http://localhost:9000](http://localhost:9000)
+- **Prometheus**: [http://localhost:9090](http://localhost:9090)
+- **Grafana**: [http://localhost:3000](http://localhost:3000) (admin / admin)
+- **Jaeger Tracing**: [http://localhost:16686](http://localhost:16686)
 
 ### Run the Application
 ```bash
-mvn spring-boot:run
+./mvnw spring-boot:run
 ```
 
 The application will start on `http://localhost:8080`.
 - Swagger UI: [http://localhost:8080/swagger-ui.html](http://localhost:8080/swagger-ui.html)
-- OpenAPI Spec: [http://localhost:8080/v3/api-docs](http://localhost:8080/v3/api-docs)
+- Actuator Health Probes: [http://localhost:8080/actuator/health](http://localhost:8080/actuator/health)
+- Prometheus Metrics: [http://localhost:8080/actuator/prometheus](http://localhost:8080/actuator/prometheus)
+
 
 ---
 

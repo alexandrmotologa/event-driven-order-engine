@@ -25,6 +25,7 @@ public class OutboxRelayScheduler {
 
     private final OutboxJpaRepository outboxJpaRepository;
     private final KafkaProducerAdapter kafkaProducerAdapter;
+    private final com.engine.order.infrastructure.metrics.OrderMetrics orderMetrics;
 
     @Value("${outbox.relay.batch-size:50}")
     private int batchSize;
@@ -37,10 +38,12 @@ public class OutboxRelayScheduler {
 
     public OutboxRelayScheduler(
             OutboxJpaRepository outboxJpaRepository,
-            KafkaProducerAdapter kafkaProducerAdapter
+            KafkaProducerAdapter kafkaProducerAdapter,
+            com.engine.order.infrastructure.metrics.OrderMetrics orderMetrics
     ) {
         this.outboxJpaRepository = Objects.requireNonNull(outboxJpaRepository, "outboxJpaRepository must not be null");
         this.kafkaProducerAdapter = Objects.requireNonNull(kafkaProducerAdapter, "kafkaProducerAdapter must not be null");
+        this.orderMetrics = Objects.requireNonNull(orderMetrics, "orderMetrics must not be null");
     }
 
     @Scheduled(fixedDelayString = "${outbox.relay.interval-ms:500}")
@@ -77,6 +80,7 @@ public class OutboxRelayScheduler {
     }
 
     private void dispatchMessage(OutboxMessageJpaEntity message) {
+        long startTime = System.currentTimeMillis();
         try {
             kafkaProducerAdapter.sendOrderEvent(
                     message.getId(),
@@ -86,9 +90,12 @@ public class OutboxRelayScheduler {
                     message.getPayload()
             ).get(5, TimeUnit.SECONDS);
 
+            long duration = System.currentTimeMillis() - startTime;
+            orderMetrics.recordOutboxPublishLatency(duration);
+
             message.markPublished(Instant.now());
             outboxJpaRepository.save(message);
-            log.info("Outbox Relay: Message [{}] successfully dispatched and marked PUBLISHED", message.getId());
+            log.info("Outbox Relay: Message [{}] successfully dispatched and marked PUBLISHED in {}ms", message.getId(), duration);
         } catch (Exception ex) {
             log.error("Outbox Relay: Failed to publish message [{}]", message.getId(), ex);
             message.incrementRetry(maxRetries);
