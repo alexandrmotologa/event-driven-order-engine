@@ -65,4 +65,11 @@ public class HexagonalArchitectureArchUnitTest {
                     .that().haveSimpleNameEndingWith("RepositoryAdapter")
                     .should().resideInAPackage("..infrastructure.adapter.out.persistence..")
                     .because("Repository adapters are persistence driven adapters");
+
+    @ArchTest
+    public static final ArchRule kafkaConsumersMustResideInKafkaPackage =
+            classes()
+                    .that().haveSimpleNameEndingWith("Consumer")
+                    .should().resideInAPackage("..infrastructure.adapter.in.kafka..")
+                    .because("Kafka event consumers are driving adapters residing in adapter.in.kafka");
 }

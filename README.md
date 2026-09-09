@@ -73,7 +73,14 @@ stateDiagram-v2
   - JPA persistence entities with Optimistic Locking (`@Version`).
   - REST API (`/api/v1/orders`) with RFC 7807 `ProblemDetail` errors and `Idempotency-Key` filter.
   - Quality Gate: Comprehensive JUnit 5 + AssertJ unit tests and strict ArchUnit architectural enforcement.
-- [ ] **Level 2: Asynchronous Event-Driven & Transactional Outbox Pattern** *(Planned)*
+- [x] **Level 2: Asynchronous Event-Driven & Transactional Outbox Pattern**
+  - Elimination of dual-write loss via PostgreSQL `outbox_messages` table and Flyway `V2__init_outbox_and_idempotent_consumer.sql`.
+  - Atomically writes domain events in the same database transaction as the aggregate state mutation.
+  - `OutboxRelayScheduler` worker polling pending events with `SELECT ... FOR UPDATE SKIP LOCKED` (safe for multi-instance scaling).
+  - Idempotent Apache Kafka producer (`acks=all`, `enable.idempotence=true`, `retries=3`) publishing to `order.events`.
+  - Idempotent Consumer Pattern deduplicating incoming events via `consumed_messages` table.
+  - Complete `docker-compose.yml` with PostgreSQL 16, Apache Kafka (KRaft mode), and Kafdrop.
+  - Quality Gate: Integration tests with embedded Kafka verifying atomic outbox insert, relay dispatch, and consumer deduplication.
 - [ ] **Level 3: Distributed Transactions & The Saga Pattern** *(Planned)*
 - [ ] **Level 4: Enterprise Production-Ready (Observability, CQRS & Resilience)** *(Planned)*
 

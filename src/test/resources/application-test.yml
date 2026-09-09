@@ -22,6 +22,24 @@ spring:
   mvc:
     problemdetails:
       enabled: true
+  kafka:
+    listener:
+      auto-startup: false
+    consumer:
+      group-id: test-group
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+
+outbox:
+  relay:
+    enabled: false
+    interval-ms: 500
+    batch-size: 50
+    max-retries: 5
 
 server:
   port: -1
