@@ -287,3 +287,9 @@ The application will start on `http://localhost:8080`.
 - [Prometheus Alerting Rules & Alertmanager](docs/alerting-and-monitoring.md)
 - [Protocol Buffers & Schema Evolution](docs/schema-evolution-protobuf.md)
 
+---
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
