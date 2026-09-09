@@ -25,13 +25,16 @@ public class OrderSummaryProjectionConsumer {
 
     private final OrderSummaryViewJpaRepository repository;
     private final ObjectMapper objectMapper;
+    private final com.engine.order.infrastructure.adapter.in.rest.sse.OrderSseNotificationService sseNotificationService;
 
     public OrderSummaryProjectionConsumer(
             OrderSummaryViewJpaRepository repository,
-            ObjectMapper objectMapper
+            ObjectMapper objectMapper,
+            com.engine.order.infrastructure.adapter.in.rest.sse.OrderSseNotificationService sseNotificationService
     ) {
         this.repository = Objects.requireNonNull(repository, "repository must not be null");
         this.objectMapper = Objects.requireNonNull(objectMapper, "objectMapper must not be null");
+        this.sseNotificationService = Objects.requireNonNull(sseNotificationService, "sseNotificationService must not be null");
     }
 
     @KafkaListener(
@@ -101,6 +104,7 @@ public class OrderSummaryProjectionConsumer {
                 entity.setSagaStatus("STARTED");
                 repository.save(entity);
                 log.info("CQRS Projection: Saved initial order summary for [{}]", orderId);
+                sseNotificationService.broadcastOrderEvent(orderId, eventType, entity.getStatus(), entity.getSagaStatus(), "Order " + orderId + " created");
             } else if (existingOpt.isPresent()) {
                 OrderSummaryViewJpaEntity entity = existingOpt.get();
                 entity.setLastEventType(eventType);
@@ -125,6 +129,7 @@ public class OrderSummaryProjectionConsumer {
 
                 repository.save(entity);
                 log.info("CQRS Projection: Updated summary for order [{}] to status [{}]", orderId, entity.getStatus());
+                sseNotificationService.broadcastOrderEvent(orderId, eventType, entity.getStatus(), entity.getSagaStatus(), "Order transitioned to " + entity.getStatus());
             }
         } catch (Exception ex) {
             log.error("Failed to process event for CQRS read model: {}", payload, ex);

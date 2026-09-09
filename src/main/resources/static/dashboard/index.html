@@ -1,0 +1,847 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Event-Driven Order Engine — Live Visualizer & Control Center</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-base: #0a0d14;
+            --bg-surface: #111726;
+            --bg-surface-elevated: #182238;
+            --border-subtle: #202b45;
+            --border-glow: #38bdf8;
+            --text-main: #f1f5f9;
+            --text-muted: #94a3b8;
+            --accent-primary: #38bdf8;
+            --accent-emerald: #10b981;
+            --accent-amber: #f59e0b;
+            --accent-rose: #f43f5e;
+            --accent-purple: #a855f7;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: var(--bg-base);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+        }
+
+        /* Top Navigation */
+        header {
+            background: rgba(17, 23, 38, 0.85);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border-subtle);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 50;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .brand-icon {
+            width: 38px;
+            height: 38px;
+            background: linear-gradient(135deg, #38bdf8, #6366f1);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 1.25rem;
+            color: #fff;
+            box-shadow: 0 0 20px rgba(56, 189, 248, 0.4);
+        }
+
+        .brand-title h1 {
+            font-size: 1.15rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+        }
+
+        .brand-title p {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .header-status {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+        }
+
+        .connection-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.35rem 0.85rem;
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--accent-emerald);
+        }
+
+        .connection-badge.disconnected {
+            background: rgba(244, 63, 94, 0.1);
+            border-color: rgba(244, 63, 94, 0.3);
+            color: var(--accent-rose);
+        }
+
+        .pulse-dot {
+            width: 8px;
+            height: 8px;
+            background-color: var(--accent-emerald);
+            border-radius: 50%;
+            box-shadow: 0 0 10px var(--accent-emerald);
+            animation: pulse 2s infinite;
+        }
+
+        .connection-badge.disconnected .pulse-dot {
+            background-color: var(--accent-rose);
+            box-shadow: 0 0 10px var(--accent-rose);
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.3); opacity: 0.5; }
+        }
+
+        /* Main Container */
+        main {
+            flex: 1;
+            padding: 2rem;
+            max-width: 1600px;
+            width: 100%;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+
+        /* Top Metrics Row */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1rem;
+        }
+
+        .metric-card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-subtle);
+            border-radius: 12px;
+            padding: 1.25rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.2s, border-color 0.2s;
+        }
+
+        .metric-card:hover {
+            transform: translateY(-2px);
+            border-color: rgba(56, 189, 248, 0.4);
+        }
+
+        .metric-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: var(--card-accent, var(--accent-primary));
+        }
+
+        .metric-label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+
+        .metric-value {
+            font-size: 1.75rem;
+            font-weight: 700;
+            font-family: 'JetBrains Mono', monospace;
+            color: #fff;
+        }
+
+        /* Simulator Controls Panel */
+        .control-panel {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-subtle);
+            border-radius: 14px;
+            padding: 1.5rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.25rem;
+        }
+
+        .panel-header h2 {
+            font-size: 1rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .sim-buttons-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1rem;
+        }
+
+        .sim-btn {
+            background: var(--bg-surface-elevated);
+            border: 1px solid var(--border-subtle);
+            border-radius: 10px;
+            padding: 1rem;
+            cursor: pointer;
+            text-align: left;
+            transition: all 0.2s ease;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            gap: 0.35rem;
+        }
+
+        .sim-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+        }
+
+        .sim-btn.btn-happy:hover { border-color: var(--accent-emerald); background: rgba(16, 185, 129, 0.08); }
+        .sim-btn.btn-payment-fail:hover { border-color: var(--accent-rose); background: rgba(244, 63, 94, 0.08); }
+        .sim-btn.btn-stock-fail:hover { border-color: var(--accent-amber); background: rgba(245, 158, 11, 0.08); }
+        .sim-btn.btn-timeout:hover { border-color: var(--accent-purple); background: rgba(168, 85, 247, 0.08); }
+
+        .btn-title {
+            font-weight: 700;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: #fff;
+        }
+
+        .btn-desc {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            line-height: 1.4;
+        }
+
+        /* Live Visual Saga Pipeline */
+        .saga-pipeline-panel {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-subtle);
+            border-radius: 14px;
+            padding: 1.5rem;
+        }
+
+        .pipeline-wrapper {
+            margin-top: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: relative;
+            padding: 1rem 0;
+            overflow-x: auto;
+        }
+
+        .pipeline-track {
+            position: absolute;
+            top: 50%;
+            left: 5%;
+            right: 5%;
+            height: 4px;
+            background: var(--border-subtle);
+            z-index: 1;
+            transform: translateY(-50%);
+        }
+
+        .pipeline-track-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #38bdf8, #10b981);
+            transition: width 0.5s ease;
+        }
+
+        .step-node {
+            position: relative;
+            z-index: 2;
+            background: var(--bg-surface-elevated);
+            border: 2px solid var(--border-subtle);
+            border-radius: 12px;
+            padding: 0.75rem 1.25rem;
+            min-width: 170px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .step-node.active {
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 25px rgba(56, 189, 248, 0.4);
+            transform: scale(1.05);
+        }
+
+        .step-node.success {
+            border-color: var(--accent-emerald);
+            background: rgba(16, 185, 129, 0.15);
+            box-shadow: 0 0 20px rgba(16, 185, 129, 0.3);
+        }
+
+        .step-node.failed {
+            border-color: var(--accent-rose);
+            background: rgba(244, 63, 94, 0.15);
+            box-shadow: 0 0 20px rgba(244, 63, 94, 0.3);
+        }
+
+        .step-node.compensated {
+            border-color: var(--accent-amber);
+            background: rgba(245, 158, 11, 0.15);
+            box-shadow: 0 0 20px rgba(245, 158, 11, 0.3);
+        }
+
+        .step-number {
+            font-size: 0.7rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            margin-bottom: 0.25rem;
+            text-transform: uppercase;
+        }
+
+        .step-name {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #fff;
+        }
+
+        .step-status {
+            font-size: 0.7rem;
+            font-family: 'JetBrains Mono', monospace;
+            margin-top: 0.25rem;
+            color: var(--text-muted);
+        }
+
+        /* 2-Column Real-Time Split */
+        .workspace-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+        }
+
+        @media (max-width: 1024px) {
+            .workspace-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .content-card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-subtle);
+            border-radius: 14px;
+            padding: 1.25rem;
+            display: flex;
+            flex-direction: column;
+            height: 480px;
+        }
+
+        .table-wrapper {
+            flex: 1;
+            overflow-y: auto;
+            margin-top: 1rem;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            font-size: 0.8rem;
+        }
+
+        th {
+            background: var(--bg-surface-elevated);
+            color: var(--text-muted);
+            font-weight: 600;
+            padding: 0.6rem 0.75rem;
+            position: sticky;
+            top: 0;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        td {
+            padding: 0.6rem 0.75rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        tr:hover {
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        /* Badges */
+        .badge {
+            display: inline-block;
+            padding: 0.2rem 0.5rem;
+            border-radius: 6px;
+            font-size: 0.65rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .badge-success { background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); }
+        .badge-pending { background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); }
+        .badge-failed { background: rgba(244, 63, 94, 0.15); color: #fb7185; border: 1px solid rgba(244, 63, 94, 0.3); }
+        .badge-info { background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3); }
+
+        /* Terminal Feed */
+        .terminal-log {
+            background: #06090f;
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
+            padding: 1rem;
+            flex: 1;
+            overflow-y: auto;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+        }
+
+        .log-entry {
+            display: flex;
+            align-items: baseline;
+            gap: 0.75rem;
+            line-height: 1.4;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .log-time {
+            color: #64748b;
+            font-size: 0.7rem;
+            flex-shrink: 0;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(4px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="brand">
+            <div class="brand-icon">⚡</div>
+            <div class="brand-title">
+                <h1>Event-Driven Order Engine</h1>
+                <p>Real-Time Saga Orchestrator & CQRS Observability Center</p>
+            </div>
+        </div>
+        <div class="header-status">
+            <div id="connectionStatus" class="connection-badge">
+                <span class="pulse-dot"></span>
+                <span id="connectionText">SSE Connecting...</span>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <!-- Real-Time Metrics -->
+        <div class="metrics-grid">
+            <div class="metric-card" style="--card-accent: #38bdf8;">
+                <div class="metric-label">Total Orders</div>
+                <div id="statTotalOrders" class="metric-value">0</div>
+            </div>
+            <div class="metric-card" style="--card-accent: #10b981;">
+                <div class="metric-label">Completed Sagas</div>
+                <div id="statCompleted" class="metric-value">0</div>
+            </div>
+            <div class="metric-card" style="--card-accent: #f43f5e;">
+                <div class="metric-label">Compensated / Rollback</div>
+                <div id="statCompensated" class="metric-value">0</div>
+            </div>
+            <div class="metric-card" style="--card-accent: #a855f7;">
+                <div class="metric-label">Stream Events Received</div>
+                <div id="statEventsCount" class="metric-value">0</div>
+            </div>
+        </div>
+
+        <!-- Simulation Controls -->
+        <div class="control-panel">
+            <div class="panel-header">
+                <h2>🎮 Distributed Workflow Scenarios (Live Simulators)</h2>
+                <span style="font-size: 0.75rem; color: var(--text-muted);">Click to trigger zero-delay distributed Saga execution</span>
+            </div>
+            <div class="sim-buttons-grid">
+                <button class="sim-btn btn-happy" onclick="triggerScenario('HAPPY_PATH')">
+                    <div class="btn-title">🟢 1. Happy Path Order</div>
+                    <div class="btn-desc">Create order ($299) &rarr; Reserve Inventory &rarr; Authorize Payment &rarr; Completed.</div>
+                </button>
+                <button class="sim-btn btn-payment-fail" onclick="triggerScenario('PAYMENT_FAIL')">
+                    <div class="btn-title">🔴 2. Payment Failure & Rollback</div>
+                    <div class="btn-desc">Reserve inventory &rarr; Payment declined &rarr; Rollback & Release Inventory &rarr; Cancelled.</div>
+                </button>
+                <button class="sim-btn btn-stock-fail" onclick="triggerScenario('STOCK_FAIL')">
+                    <div class="btn-title">🟡 3. Out-of-Stock Rejection</div>
+                    <div class="btn-desc">Attempt reservation &rarr; Stock unavailable &rarr; Fast cancel without charging payment.</div>
+                </button>
+                <button class="sim-btn btn-timeout" onclick="triggerScenario('TIMEOUT')">
+                    <div class="btn-title">⏱️ 4. Dead-Man Switch (Timeout)</div>
+                    <div class="btn-desc">Participant fails to reply &rarr; Timeout worker intervenes &rarr; Emergency compensation.</div>
+                </button>
+            </div>
+        </div>
+
+        <!-- Saga Live Progress Flow -->
+        <div class="saga-pipeline-panel">
+            <div class="panel-header">
+                <h2>🔄 Active Order Saga Flow Visualizer</h2>
+                <span id="activeOrderIdDisplay" style="font-size: 0.8rem; font-family: 'JetBrains Mono', monospace; color: var(--accent-primary);">No active order selected</span>
+            </div>
+            <div class="pipeline-wrapper">
+                <div class="pipeline-track">
+                    <div id="pipelineProgress" class="pipeline-track-fill"></div>
+                </div>
+                <div id="nodeCreated" class="step-node">
+                    <div class="step-number">Step 1</div>
+                    <div class="step-name">Order Created</div>
+                    <div id="statusCreated" class="step-status">IDLE</div>
+                </div>
+                <div id="nodeInventory" class="step-node">
+                    <div class="step-number">Step 2</div>
+                    <div class="step-name">Inventory Reserved</div>
+                    <div id="statusInventory" class="step-status">IDLE</div>
+                </div>
+                <div id="nodePayment" class="step-node">
+                    <div class="step-number">Step 3</div>
+                    <div class="step-name">Payment Authorized</div>
+                    <div id="statusPayment" class="step-status">IDLE</div>
+                </div>
+                <div id="nodeComplete" class="step-node">
+                    <div class="step-number">Step 4</div>
+                    <div class="step-name">Order Fulfilled</div>
+                    <div id="statusComplete" class="step-status">IDLE</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2-Column Split: CQRS Summaries & Live Events Terminal -->
+        <div class="workspace-grid">
+            <div class="content-card">
+                <div class="panel-header">
+                    <h2>📊 CQRS Read Model (order_summary_view)</h2>
+                    <button onclick="loadCqrsSummaries()" style="background: transparent; border: 1px solid var(--border-subtle); color: var(--text-muted); padding: 0.2rem 0.6rem; border-radius: 6px; cursor: pointer; font-size: 0.75rem;">Refresh</button>
+                </div>
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Order ID</th>
+                                <th>Status</th>
+                                <th>Total</th>
+                                <th>Saga Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="summaryTableBody">
+                            <tr><td colspan="4" style="text-align: center; color: var(--text-muted);">Loading summaries...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="content-card">
+                <div class="panel-header">
+                    <h2>⚡ Live Kafka & SSE Stream Terminal</h2>
+                    <span style="font-size: 0.75rem; color: var(--text-muted);">Real-time domain events</span>
+                </div>
+                <div id="terminalLog" class="terminal-log">
+                    <div class="log-entry">
+                        <span class="log-time">[INIT]</span>
+                        <span style="color: #38bdf8;">Listening to Server-Sent Events stream at /api/v1/orders/live...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        let eventCount = 0;
+        let activeOrderId = null;
+
+        // Initialize Server-Sent Events (SSE)
+        function initSse() {
+            const eventSource = new EventSource('/api/v1/orders/live');
+            const statusBadge = document.getElementById('connectionStatus');
+            const statusText = document.getElementById('connectionText');
+
+            eventSource.onopen = () => {
+                statusBadge.classList.remove('disconnected');
+                statusText.innerText = '● Live SSE Connected';
+                addTerminalLog('SYSTEM', 'SSE connection established successfully.');
+            };
+
+            eventSource.onerror = (err) => {
+                statusBadge.classList.add('disconnected');
+                statusText.innerText = '○ SSE Reconnecting...';
+            };
+
+            eventSource.onmessage = (e) => {
+                handleIncomingEvent(e.data);
+            };
+
+            // Listen to known event types
+            const eventTypes = [
+                'OrderCreatedEvent', 'OrderValidatedEvent', 'OrderPaymentPendingEvent',
+                'OrderPaidEvent', 'OrderInventoryAllocatedEvent', 'OrderCompletedEvent',
+                'OrderCancelledEvent', 'InventoryReservedEvent', 'PaymentAuthorizedEvent',
+                'PaymentFailedEvent', 'SAGA_TIMEOUT', 'CONNECTED'
+            ];
+
+            eventTypes.forEach(type => {
+                eventSource.addEventListener(type, (e) => {
+                    handleIncomingEvent(e.data);
+                });
+            });
+        }
+
+        function handleIncomingEvent(rawData) {
+            try {
+                const data = JSON.parse(rawData);
+                eventCount++;
+                document.getElementById('statEventsCount').innerText = eventCount;
+
+                addTerminalLog(data.eventType, `${data.orderId.substring(0, 8)}... | ${data.status} | ${data.message || ''}`);
+
+                if (activeOrderId && data.orderId === activeOrderId) {
+                    updateVisualPipeline(data.status, data.sagaStatus);
+                }
+
+                // Refresh CQRS table on state changes
+                loadCqrsSummaries();
+            } catch (err) {
+                console.error('Error parsing SSE event:', err);
+            }
+        }
+
+        function addTerminalLog(type, message) {
+            const terminal = document.getElementById('terminalLog');
+            const time = new Date().toLocaleTimeString();
+            const div = document.createElement('div');
+            div.className = 'log-entry';
+
+            let color = '#38bdf8';
+            if (type.includes('Fail') || type.includes('Cancel') || type.includes('TIMEOUT')) color = '#f43f5e';
+            else if (type.includes('Completed') || type.includes('Paid') || type.includes('Reserved')) color = '#10b981';
+
+            div.innerHTML = `
+                <span class="log-time">[${time}]</span>
+                <span style="color: ${color}; font-weight: 600;">[${type}]</span>
+                <span style="color: #cbd5e1;">${message}</span>
+            `;
+            terminal.appendChild(div);
+            terminal.scrollTop = terminal.scrollHeight;
+        }
+
+        // Trigger Distributed Workflows
+        async function triggerScenario(scenario) {
+            let sku = 'SKU-SMARTPHONE-PRO';
+            let price = 299.00;
+            let qty = 1;
+
+            if (scenario === 'PAYMENT_FAIL') {
+                sku = 'SKU-FAIL-PAYMENT';
+                price = 1500.00;
+            } else if (scenario === 'STOCK_FAIL') {
+                sku = 'OUT_OF_STOCK';
+                price = 49.00;
+            } else if (scenario === 'TIMEOUT') {
+                sku = 'SKU-TIMEOUT-ITEM';
+                price = 99.00;
+            }
+
+            const payload = {
+                customerId: 'CUST-WEB-001',
+                items: [{
+                    sku: sku,
+                    productName: 'Scenario Simulation Item (' + scenario + ')',
+                    quantity: qty,
+                    unitPrice: price,
+                    currency: 'USD'
+                }]
+            };
+
+            try {
+                addTerminalLog('SIMULATOR', `Launching ${scenario} workflow...`);
+                resetVisualPipeline();
+
+                const res = await fetch('/api/v1/orders', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Idempotency-Key': crypto.randomUUID()
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                if (res.ok) {
+                    const order = await res.json();
+                    activeOrderId = order.orderId;
+                    document.getElementById('activeOrderIdDisplay').innerText = `Order: ${activeOrderId}`;
+                    updateVisualPipeline('CREATED', 'STARTED');
+                    addTerminalLog('HTTP', `Order created successfully with ID: ${activeOrderId}`);
+                    loadCqrsSummaries();
+                } else {
+                    addTerminalLog('HTTP_ERROR', 'Failed to create order: ' + res.status);
+                }
+            } catch (err) {
+                addTerminalLog('ERROR', 'Error calling API: ' + err.message);
+            }
+        }
+
+        function resetVisualPipeline() {
+            document.querySelectorAll('.step-node').forEach(node => {
+                node.className = 'step-node';
+            });
+            document.getElementById('statusCreated').innerText = 'IDLE';
+            document.getElementById('statusInventory').innerText = 'IDLE';
+            document.getElementById('statusPayment').innerText = 'IDLE';
+            document.getElementById('statusComplete').innerText = 'IDLE';
+            document.getElementById('pipelineProgress').style.width = '0%';
+        }
+
+        function updateVisualPipeline(status, sagaStatus) {
+            const nodeCreated = document.getElementById('nodeCreated');
+            const nodeInventory = document.getElementById('nodeInventory');
+            const nodePayment = document.getElementById('nodePayment');
+            const nodeComplete = document.getElementById('nodeComplete');
+            const track = document.getElementById('pipelineProgress');
+
+            if (status === 'CREATED' || status === 'VALIDATED') {
+                nodeCreated.className = 'step-node success';
+                document.getElementById('statusCreated').innerText = 'SUCCESS';
+                nodeInventory.className = 'step-node active';
+                document.getElementById('statusInventory').innerText = 'RESERVING...';
+                track.style.width = '33%';
+            } else if (status === 'PAYMENT_PENDING') {
+                nodeCreated.className = 'step-node success';
+                nodeInventory.className = 'step-node success';
+                document.getElementById('statusInventory').innerText = 'RESERVED';
+                nodePayment.className = 'step-node active';
+                document.getElementById('statusPayment').innerText = 'AUTHORIZING...';
+                track.style.width = '66%';
+            } else if (status === 'PAID' || status === 'INVENTORY_ALLOCATED') {
+                nodeCreated.className = 'step-node success';
+                nodeInventory.className = 'step-node success';
+                nodePayment.className = 'step-node success';
+                document.getElementById('statusPayment').innerText = 'AUTHORIZED';
+                nodeComplete.className = 'step-node active';
+                document.getElementById('statusComplete').innerText = 'FULFILLING...';
+                track.style.width = '90%';
+            } else if (status === 'COMPLETED') {
+                nodeCreated.className = 'step-node success';
+                nodeInventory.className = 'step-node success';
+                nodePayment.className = 'step-node success';
+                nodeComplete.className = 'step-node success';
+                document.getElementById('statusComplete').innerText = 'FULFILLED (OK)';
+                track.style.width = '100%';
+            } else if (status === 'CANCELLED') {
+                nodeComplete.className = 'step-node failed';
+                document.getElementById('statusComplete').innerText = 'COMPENSATED';
+                if (sagaStatus === 'COMPENSATED') {
+                    nodeInventory.className = 'step-node compensated';
+                    document.getElementById('statusInventory').innerText = 'RELEASED';
+                    nodePayment.className = 'step-node failed';
+                    document.getElementById('statusPayment').innerText = 'DECLINED';
+                }
+            }
+        }
+
+        async function loadCqrsSummaries() {
+            try {
+                const res = await fetch('/api/v1/orders/summary');
+                if (!res.ok) return;
+                const data = await res.json();
+
+                let completedCount = 0;
+                let compensatedCount = 0;
+
+                const tbody = document.getElementById('summaryTableBody');
+                if (data.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: var(--text-muted);">No orders created yet.</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = data.map(item => {
+                    if (item.status === 'COMPLETED') completedCount++;
+                    if (item.status === 'CANCELLED') compensatedCount++;
+
+                    let badgeClass = 'badge-info';
+                    if (item.status === 'COMPLETED') badgeClass = 'badge-success';
+                    else if (item.status === 'CANCELLED') badgeClass = 'badge-failed';
+                    else if (item.status === 'PAYMENT_PENDING') badgeClass = 'badge-pending';
+
+                    return `
+                        <tr>
+                            <td style="color: var(--accent-primary); cursor: pointer;" onclick="inspectOrder('${item.orderId}')">${item.orderId.substring(0, 8)}...</td>
+                            <td><span class="badge ${badgeClass}">${item.status}</span></td>
+                            <td>$${Number(item.totalAmount).toFixed(2)}</td>
+                            <td><span style="color: ${item.sagaStatus === 'COMPLETED' ? '#34d399' : item.sagaStatus === 'COMPENSATED' ? '#fb7185' : '#fbbf24'};">${item.sagaStatus || 'N/A'}</span></td>
+                        </tr>
+                    `;
+                }).join('');
+
+                document.getElementById('statTotalOrders').innerText = data.length;
+                document.getElementById('statCompleted').innerText = completedCount;
+                document.getElementById('statCompensated').innerText = compensatedCount;
+            } catch (err) {
+                console.error('Error fetching summaries:', err);
+            }
+        }
+
+        function inspectOrder(orderId) {
+            activeOrderId = orderId;
+            document.getElementById('activeOrderIdDisplay').innerText = `Order: ${activeOrderId}`;
+            addTerminalLog('INSPECT', `Selected order ${orderId} for live tracking.`);
+        }
+
+        // Boot
+        window.addEventListener('DOMContentLoaded', () => {
+            initSse();
+            loadCqrsSummaries();
+            setInterval(loadCqrsSummaries, 4000);
+        });
+    </script>
+</body>
+</html>
