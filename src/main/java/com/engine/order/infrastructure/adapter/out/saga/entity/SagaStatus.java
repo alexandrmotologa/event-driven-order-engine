@@ -10,5 +10,6 @@ public enum SagaStatus {
     COMPENSATING_PAYMENT,
     COMPLETED,
     COMPENSATED,
+    TIMED_OUT,
     FAILED
 }

@@ -41,6 +41,12 @@ outbox:
     batch-size: 50
     max-retries: 5
 
+saga:
+  timeout:
+    enabled: false
+    interval-ms: 1000
+    ttl-seconds: 1
+
 server:
   port: -1
 

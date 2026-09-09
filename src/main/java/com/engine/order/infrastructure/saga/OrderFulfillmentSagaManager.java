@@ -22,6 +22,8 @@ import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -230,6 +232,67 @@ public class OrderFulfillmentSagaManager {
 
     public Optional<SagaInstanceJpaEntity> getSagaByOrderId(UUID orderId) {
         return sagaInstanceJpaRepository.findByOrderId(orderId);
+    }
+
+    @Transactional
+    public int handleTimeouts(Duration timeout) {
+        Instant cutoffTime = Instant.now().minus(timeout);
+        List<SagaStatus> pendingStatuses = List.of(
+                SagaStatus.STARTED,
+                SagaStatus.INVENTORY_RESERVATION_PENDING,
+                SagaStatus.PAYMENT_AUTHORIZATION_PENDING
+        );
+
+        List<SagaInstanceJpaEntity> stuckSagas = sagaInstanceJpaRepository.findStuckSagas(pendingStatuses, cutoffTime);
+        if (stuckSagas.isEmpty()) {
+            return 0;
+        }
+
+        log.warn("SAGA DEAD-MAN SWITCH: Found {} stuck saga(s) exceeding timeout threshold of {}s",
+                stuckSagas.size(), timeout.toSeconds());
+
+        for (SagaInstanceJpaEntity saga : stuckSagas) {
+            handleSingleSagaTimeout(saga);
+        }
+
+        return stuckSagas.size();
+    }
+
+    private void handleSingleSagaTimeout(SagaInstanceJpaEntity saga) {
+        UUID sagaId = saga.getId();
+        UUID orderId = saga.getOrderId();
+        String step = saga.getCurrentStep();
+        String reason = "Dead-man switch triggered: Execution timed out at step [" + step + "]";
+
+        log.error("SAGA [{}]: TIMEOUT detected for order [{}] at step [{}]. Executing emergency compensation.",
+                sagaId, orderId, step);
+
+        orderMetrics.recordSagaFailure("OrderFulfillmentSaga", "TIMEOUT_" + step);
+        saga.markTimedOut(reason);
+        sagaInstanceJpaRepository.save(saga);
+
+        // Compensating Action: Release inventory if it was possibly reserved
+        if (saga.getStatus() == SagaStatus.PAYMENT_AUTHORIZATION_PENDING || "PAYMENT_AUTHORIZATION".equals(step)) {
+            ReleaseInventoryCommand releaseCmd = new ReleaseInventoryCommand(
+                    sagaId,
+                    orderId,
+                    "Timeout compensation: Emergency inventory release - " + reason
+            );
+            sendCommand(KafkaConfig.INVENTORY_COMMANDS_TOPIC, "ReleaseInventoryCommand", orderId.toString(), releaseCmd);
+        }
+
+        // Cancel order if not already cancelled or completed
+        try {
+            Order order = orderRepositoryPort.findById(OrderId.of(orderId)).orElse(null);
+            if (order != null && order.getState().canTransitionTo(com.engine.order.domain.model.OrderState.CANCELLED)) {
+                Order cancelled = order.cancel(reason);
+                orderRepositoryPort.save(cancelled);
+                orderMetrics.recordStateTransition(order.getState().name(), "CANCELLED");
+                log.info("SAGA [{}]: Order [{}] successfully cancelled due to timeout", sagaId, orderId);
+            }
+        } catch (Exception ex) {
+            log.error("SAGA [{}]: Failed to cancel order [{}] during timeout compensation", sagaId, orderId, ex);
+        }
     }
 
     private void sendCommand(String topic, String commandType, String key, Object command) {

@@ -89,6 +89,12 @@ public class SagaInstanceJpaEntity {
         this.updatedAt = Instant.now();
     }
 
+    public void markTimedOut(String reason) {
+        this.status = SagaStatus.TIMED_OUT;
+        this.errorReason = reason;
+        this.updatedAt = Instant.now();
+    }
+
     public void markCompleted() {
         this.currentStep = "COMPLETED";
         this.status = SagaStatus.COMPLETED;
