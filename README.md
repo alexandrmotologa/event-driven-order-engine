@@ -11,6 +11,8 @@ An enterprise-grade, high-throughput, fault-tolerant **Event-Driven Order Proces
 
 The system solves mission-critical distributed systems challenges: strict transactional consistency, zero dual-write message loss (Transactional Outbox Pattern), distributed transaction compensation (Saga Orchestration), and end-to-end observability.
 
+![Event-Driven Order Engine Live Dashboard](docs/images/dashboard-live-overview.png)
+
 ---
 
 ## 🏛 Architectural Blueprint
@@ -122,6 +124,7 @@ stateDiagram-v2
     - Scenario Launcher: One-click interactive buttons to simulate *Happy Path*, *Payment Failure*, *Out of Stock*, and *Forced Timeout*.
     - Interactive Visual Flowchart: Real-time SVG nodes illuminating dynamically (Green = Success, Yellow = In-Flight, Red = Compensated/Failed).
     - Live Event Stream Table: Instant audit trail updates streamed via SSE.
+    - ![Saga Compensation Flow](docs/images/dashboard-saga-compensation.png)
   - **Quality Gate**: `OrderSseIntegrationTest` validating client subscription lifecycle and real-time event payloads.
 - [x] **Level 7: Event Sourcing, Audit Trail & Time-Travel Debugging**
   - **Immutable Event Store (`order_event_stream`)**:
