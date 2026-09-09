@@ -1,17 +1,26 @@
-# Event-Driven Order Processing & Workflow Engine
+<p align="center">
+  <img src="docs/images/logo.png" alt="Event-Driven Order Engine Logo" width="130" style="border-radius: 20px;" />
+</p>
 
-[![Java 21](https://img.shields.io/badge/Java-21%20LTS-orange.svg)](https://openjdk.org/projects/jdk/21/)
-[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.3.3-brightgreen.svg)](https://spring.io/projects/spring-boot)
-[![Architecture](https://img.shields.io/badge/Architecture-Hexagonal%20%2F%20Clean-blue.svg)](docs/architecture.md)
-[![ArchUnit](https://img.shields.io/badge/ArchUnit-Enforced-purple.svg)](https://www.archunit.org/)
-[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16%2B-blue.svg)](https://www.postgresql.org/)
-[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+<h1 align="center">Event-Driven Order Processing & Workflow Engine</h1>
 
-An enterprise-grade, high-throughput, fault-tolerant **Event-Driven Order Processing & Workflow Engine** engineered in **Java 21 LTS** and **Spring Boot 3.3+**. 
+<p align="center">
+  <a href="https://github.com/alexandrmotologa/event-driven-order-engine/actions/workflows/ci.yml"><img src="https://github.com/alexandrmotologa/event-driven-order-engine/actions/workflows/ci.yml/badge.svg" alt="Build Status" /></a>
+  <img src="https://img.shields.io/badge/Java-21%20LTS-orange.svg" alt="Java 21" />
+  <img src="https://img.shields.io/badge/Spring%20Boot-3.3.3-brightgreen.svg" alt="Spring Boot" />
+  <img src="https://img.shields.io/badge/Architecture-Hexagonal-blue.svg" alt="Hexagonal Architecture" />
+  <img src="https://img.shields.io/badge/ArchUnit-Enforced-purple.svg" alt="ArchUnit" />
+  <img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT" />
+</p>
 
-The system solves mission-critical distributed systems challenges: strict transactional consistency, zero dual-write message loss (Transactional Outbox Pattern), distributed transaction compensation (Saga Orchestration), and end-to-end observability.
+<p align="center">
+  Enterprise distributed order workflow engine built with Java 21 LTS and Spring Boot 3.3+.<br>
+  Features Transactional Outbox, Saga Orchestration, Event Sourcing, and Kafka Lag Autoscaling.
+</p>
 
-![Event-Driven Order Engine Live Dashboard](docs/images/dashboard-live-overview.png)
+<p align="center">
+  <img src="docs/images/dashboard-live-overview.png" alt="Event-Driven Order Engine Live Dashboard" />
+</p>
 
 ---
 
