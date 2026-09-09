@@ -58,10 +58,11 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/auth/**").permitAll()
                         .requestMatchers("/api/v1/orders/*/live", "/api/v1/orders/live").permitAll()
 
-                        // Admin-only endpoints: Audit History, Time-Travel Replay, CQRS Aggregates
+                        // Admin-only endpoints: Audit History, Time-Travel Replay, CQRS Aggregates, DLQ Console
                         .requestMatchers("/api/v1/orders/summary", "/api/v1/orders/summary/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/v1/orders/*/history").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/v1/orders/*/replay").hasRole("ADMIN")
+                        .requestMatchers("/api/v1/dlq/**").hasRole("ADMIN")
 
                         // Customer or Admin endpoints: Standard Order Flow
                         .requestMatchers(HttpMethod.POST, "/api/v1/orders").hasAnyRole("CUSTOMER", "ADMIN")
