@@ -105,6 +105,44 @@ stateDiagram-v2
   - **Production Packaging**:
     - Multi-stage `Dockerfile` leveraging Java 21 Generational ZGC (`-XX:+UseZGC -XX:+ZGenerational`) and Virtual Threads (`spring.threads.virtual.enabled=true`).
   - **Quality Gate**: Integration tests verifying asynchronous CQRS projection, Circuit Breaker state transitions/fallback, and Prometheus metric telemetry.
+- [x] **Level 5: Resilience Hardening & Deterministic In-Order Delivery**
+  - **Saga Timeout Worker & Dead-Man Switch**:
+    - Automatic detection of hanging/abandoned sagas exceeding TTL via `SagaInstanceJpaRepository.findStuckSagas(...)`.
+    - Periodic background worker `SagaTimeoutScheduler` marking status as `TIMED_OUT`.
+    - Emergency compensation dispatch: releases inventory (`ReleaseInventoryCommand`), cancels the order, and records telemetry metric `orders.saga.timeout.count`.
+  - **Deterministic In-Order Kafka Key Affinity**:
+    - Enforced strict partition routing by `orderId.toString()` across all event and command publishers to eliminate out-of-order delivery.
+  - **Quality Gate**: `SagaTimeoutIntegrationTest` simulating downstream service silence and validating automated compensation and order cancellation.
+- [x] **Level 6: Real-Time SSE & Interactive Visualizer Dashboard**
+  - **Server-Sent Events (SSE) Streaming Engine**:
+    - Reactive broadcast system via `OrderSseNotificationService` supporting client streams: `GET /api/v1/orders/{orderId}/live` (individual order) and `GET /api/v1/orders/live` (global event stream).
+    - CQRS projection listener emits real-time updates as state machine and saga steps advance.
+  - **Interactive Visualizer Dashboard (`/dashboard`)**:
+    - Embedded zero-dependency SPA (HTML5, CSS3, Vanilla JS) served at `http://localhost:8080/dashboard`.
+    - Scenario Launcher: One-click interactive buttons to simulate *Happy Path*, *Payment Failure*, *Out of Stock*, and *Forced Timeout*.
+    - Interactive Visual Flowchart: Real-time SVG nodes illuminating dynamically (Green = Success, Yellow = In-Flight, Red = Compensated/Failed).
+    - Live Event Stream Table: Instant audit trail updates streamed via SSE.
+  - **Quality Gate**: `OrderSseIntegrationTest` validating client subscription lifecycle and real-time event payloads.
+- [x] **Level 7: Event Sourcing, Audit Trail & Time-Travel Debugging**
+  - **Immutable Event Store (`order_event_stream`)**:
+    - Flyway database migration `V5__init_event_store.sql` establishing an append-only event stream table with monotonic sequence constraints `(order_id, sequence_number)`.
+    - `EventStorePort` and `EventStoreRepositoryAdapter` capturing all domain state mutations atomically alongside the outbox.
+  - **Time-Travel & Historical State Replay Engine**:
+    - `OrderReplayService` capable of folding historical domain events to reconstruct aggregate state at any previous sequence version.
+    - Endpoints: `GET /api/v1/orders/{orderId}/history` (immutable audit trail) and `GET /api/v1/orders/{orderId}/replay?targetVersion={v}` (historical aggregate state).
+  - **Quality Gate**: `OrderEventStoreReplayIntegrationTest` validating sequence monotonically, audit history retrieval, and accurate time-travel aggregate reconstruction.
+- [x] **Level 8: Security RBAC, Debezium CDC Architecture & CI/CD Pipeline**
+  - **Spring Security & Role-Based Access Control (RBAC)**:
+    - Lightweight, dependency-free HMAC-SHA256 JWT provider (`JwtTokenProvider`) and `JwtAuthenticationFilter`.
+    - Role segregation: `ROLE_CUSTOMER` (order placement and viewing) vs `ROLE_ADMIN` (audit history, CQRS summaries, time-travel replay).
+    - Token issuance endpoint: `POST /api/v1/auth/token`.
+    - Public exemptions: `/dashboard/**`, `/`, Swagger UI (`/swagger-ui/**`), and Actuator health endpoints (`/actuator/**`).
+  - **Debezium CDC Zero-Polling Outbox Blueprint**:
+    - Dockerized Debezium Connect configuration `docker/debezium/debezium-outbox-connector.json` with PostgreSQL `wal_level=logical`.
+    - Transforms outbox records directly into Kafka event streams with sub-millisecond latency.
+  - **GitHub Actions CI/CD Pipeline**:
+    - Automated pipeline `.github/workflows/ci.yml` running on push/PR: Java 21 environment setup, full test suite execution, ArchUnit architectural enforcement, and multi-stage Docker build verification.
+  - **Quality Gate**: `SecurityRbacIntegrationTest` validating 401 Unauthorized, 403 Forbidden, 200 OK for Customer/Admin roles, and public route access.
 
 ---
 

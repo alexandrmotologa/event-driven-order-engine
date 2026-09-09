@@ -61,6 +61,12 @@
             <version>${resilience4j.version}</version>
         </dependency>
 
+        <!-- Spring Security & RBAC -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-security</artifactId>
+        </dependency>
+
         <!-- Observability & Metrics (Prometheus + Micrometer Tracing + OTel) -->
         <dependency>
             <groupId>io.micrometer</groupId>
@@ -107,6 +113,11 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-test</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>

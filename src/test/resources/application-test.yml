@@ -47,6 +47,10 @@ saga:
     interval-ms: 1000
     ttl-seconds: 1
 
+app:
+  security:
+    enabled: false
+
 server:
   port: -1
 

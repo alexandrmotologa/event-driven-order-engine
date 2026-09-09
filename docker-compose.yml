@@ -10,6 +10,7 @@ services:
       POSTGRES_PASSWORD: postgres
     ports:
       - "5432:5432"
+    command: ["postgres", "-c", "wal_level=logical"]
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -17,6 +18,21 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+
+  debezium:
+    image: debezium/connect:2.6
+    container_name: order_engine_debezium
+    ports:
+      - "8083:8083"
+    environment:
+      - BOOTSTRAP_SERVERS=kafka:9092
+      - GROUP_ID=1
+      - CONFIG_STORAGE_TOPIC=order_connect_configs
+      - OFFSET_STORAGE_TOPIC=order_connect_offsets
+      - STATUS_STORAGE_TOPIC=order_connect_status
+    depends_on:
+      - postgres
+      - kafka
 
   kafka:
     image: apache/kafka:3.7.0
