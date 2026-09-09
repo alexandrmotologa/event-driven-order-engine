@@ -61,4 +61,31 @@ public class OrderHistoryQueryRestController {
         OrderResponseDto replayed = orderHistoryUseCase.replayOrderToVersion(orderId, effectiveVersion);
         return ResponseEntity.ok(replayed);
     }
+
+    @GetMapping("/snapshots")
+    @Operation(summary = "List Order Snapshots", description = "Retrieves all periodic aggregate snapshots captured for this order.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Snapshots retrieved successfully",
+                    content = @Content(array = @ArraySchema(schema = @Schema(implementation = com.engine.order.application.dto.OrderSnapshotRecord.class))))
+    })
+    public ResponseEntity<List<com.engine.order.application.dto.OrderSnapshotRecord>> getSnapshots(
+            @Parameter(description = "Order UUID") @PathVariable UUID orderId
+    ) {
+        List<com.engine.order.application.dto.OrderSnapshotRecord> snapshots = orderHistoryUseCase.getSnapshots(orderId);
+        return ResponseEntity.ok(snapshots);
+    }
+
+    @PostMapping("/snapshots")
+    @Operation(summary = "Take Order Snapshot", description = "Manually triggers an immediate aggregate snapshot at the current sequence version.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Snapshot triggered successfully"),
+            @ApiResponse(responseCode = "404", description = "Order not found")
+    })
+    public ResponseEntity<Void> takeSnapshot(
+            @Parameter(description = "Order UUID") @PathVariable UUID orderId
+    ) {
+        orderHistoryUseCase.createSnapshot(orderId);
+        return ResponseEntity.ok().build();
+    }
 }
+
