@@ -194,8 +194,20 @@ Authorization: Bearer <jwt_token>
 ### 5.2 Time-Travel Aggregate Replay
 - **Method**: `GET /api/v1/orders/{orderId}/replay?targetVersion={version}`
 - **Role Required**: `ROLE_ADMIN`
-- **Description**: Reconstitutes the aggregate state by folding events up to the specified sequence version number.
+- **Description**: Reconstitutes the aggregate state by folding events up to the specified sequence version number. Automatically leverages the closest snapshot to achieve amortized $O(1)$ replay performance.
 - **Response (200 OK)**: Reconstructed `OrderResponseDto` at that historical point in time.
+
+### 5.3 Get Order Snapshots
+- **Method**: `GET /api/v1/orders/{orderId}/snapshots`
+- **Role Required**: `ROLE_ADMIN`
+- **Description**: Returns all historical aggregate state snapshots recorded for the given order.
+- **Response (200 OK)**: List of `OrderSnapshotRecord` objects.
+
+### 5.4 Trigger Aggregate Snapshot
+- **Method**: `POST /api/v1/orders/{orderId}/snapshots`
+- **Role Required**: `ROLE_ADMIN`
+- **Description**: Captures and persists an immediate aggregate snapshot at the current latest sequence version.
+- **Response (201 Created)**: Created `OrderSnapshotRecord`.
 
 ---
 
