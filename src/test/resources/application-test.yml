@@ -1,0 +1,27 @@
+spring:
+  application:
+    name: event-driven-order-engine-test
+  threads:
+    virtual:
+      enabled: true
+  datasource:
+    url: jdbc:h2:mem:testdb;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DEFAULT_NULL_ORDERING=HIGH;DB_CLOSE_DELAY=-1
+    username: sa
+    password: ""
+    driver-class-name: org.h2.Driver
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    open-in-view: false
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+  flyway:
+    enabled: false
+  mvc:
+    problemdetails:
+      enabled: true
+
+server:
+  port: -1
