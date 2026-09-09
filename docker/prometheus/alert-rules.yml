@@ -1,0 +1,52 @@
+groups:
+  - name: order_engine_alerts
+    rules:
+      - alert: HighSagaFailureRate
+        expr: rate(orders_saga_failures_total[2m]) > 0.05
+        for: 1m
+        labels:
+          severity: critical
+          team: platform
+        annotations:
+          summary: "High Saga distributed transaction failure rate detected"
+          description: "Saga compensation rate is exceeding 5% in the last 2 minutes for order engine."
+
+      - alert: SagaTimeoutDetected
+        expr: increase(orders_saga_timeout_total[1m]) > 0
+        for: 30s
+        labels:
+          severity: warning
+          team: workflow
+        annotations:
+          summary: "Dead-Man Switch: Saga transaction timed out"
+          description: "One or more Saga instances timed out due to unresponsive participant services and triggered emergency compensations."
+
+      - alert: DlqPoisonPillAccumulation
+        expr: orders_dlq_pending_count > 0
+        for: 1m
+        labels:
+          severity: critical
+          team: data-reliability
+        annotations:
+          summary: "Dead Letter Queue has unhandled poison pills"
+          description: "There are {{ $value }} poisoned messages pending redrive or inspection in order.events.dlq."
+
+      - alert: PaymentCircuitBreakerOpen
+        expr: resilience4j_circuitbreaker_state{name="paymentService",state="open"} == 1
+        for: 15s
+        labels:
+          severity: critical
+          team: payments
+        annotations:
+          summary: "Payment Gateway Circuit Breaker is OPEN"
+          description: "Resilience4j has tripped the circuit breaker due to high error rates or latency on external payment providers."
+
+      - alert: HighRateLimitRejectionRate
+        expr: rate(orders_ratelimit_rejected_total[1m]) > 5
+        for: 30s
+        labels:
+          severity: warning
+          team: security
+        annotations:
+          summary: "Abnormal surge in Token Bucket 429 rate limit rejections"
+          description: "Tenant traffic is exceeding allocated capacities; potential DDoS or runaway client activity."
