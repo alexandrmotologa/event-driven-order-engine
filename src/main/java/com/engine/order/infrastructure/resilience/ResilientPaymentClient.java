@@ -17,6 +17,11 @@ public class ResilientPaymentClient {
     private static final Logger log = LoggerFactory.getLogger(ResilientPaymentClient.class);
 
     private final AtomicBoolean simulateServiceOutage = new AtomicBoolean(false);
+    private final com.engine.order.infrastructure.chaos.ChaosEngineConfig chaosEngineConfig;
+
+    public ResilientPaymentClient(com.engine.order.infrastructure.chaos.ChaosEngineConfig chaosEngineConfig) {
+        this.chaosEngineConfig = Objects.requireNonNull(chaosEngineConfig, "chaosEngineConfig must not be null");
+    }
 
     public record PaymentResult(boolean success, String transactionId, String message, boolean fallback) {}
 
@@ -34,6 +39,20 @@ public class ResilientPaymentClient {
         Objects.requireNonNull(orderId, "orderId must not be null");
         Objects.requireNonNull(amount, "amount must not be null");
         Objects.requireNonNull(currency, "currency must not be null");
+
+        if (chaosEngineConfig != null && chaosEngineConfig.isEnabled()) {
+            if (chaosEngineConfig.getLatencyMs() > 0) {
+                try {
+                    Thread.sleep(chaosEngineConfig.getLatencyMs());
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+            }
+            if (chaosEngineConfig.isSimulatePaymentOutage()) {
+                log.warn("ResilientPaymentClient: Injected Chaos 503 SERVICE UNAVAILABLE for order [{}]", orderId);
+                throw new PaymentGatewayUnavailableException("Downstream payment service is temporarily unavailable (Chaos Injected)");
+            }
+        }
 
         if (simulateServiceOutage.get()) {
             log.warn("ResilientPaymentClient: Simulated downstream payment gateway 503 SERVICE UNAVAILABLE for order [{}]", orderId);
