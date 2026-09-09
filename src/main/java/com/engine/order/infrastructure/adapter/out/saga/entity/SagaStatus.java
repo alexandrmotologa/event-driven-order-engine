@@ -1,0 +1,14 @@
+package com.engine.order.infrastructure.adapter.out.saga.entity;
+
+public enum SagaStatus {
+    STARTED,
+    INVENTORY_RESERVATION_PENDING,
+    INVENTORY_RESERVED,
+    PAYMENT_AUTHORIZATION_PENDING,
+    PAYMENT_AUTHORIZED,
+    COMPENSATING_INVENTORY,
+    COMPENSATING_PAYMENT,
+    COMPLETED,
+    COMPENSATED,
+    FAILED
+}

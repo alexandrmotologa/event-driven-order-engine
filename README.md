@@ -81,7 +81,15 @@ stateDiagram-v2
   - Idempotent Consumer Pattern deduplicating incoming events via `consumed_messages` table.
   - Complete `docker-compose.yml` with PostgreSQL 16, Apache Kafka (KRaft mode), and Kafdrop.
   - Quality Gate: Integration tests with embedded Kafka verifying atomic outbox insert, relay dispatch, and consumer deduplication.
-- [ ] **Level 3: Distributed Transactions & The Saga Pattern** *(Planned)*
+- [x] **Level 3: Distributed Transactions & The Saga Pattern (Orchestration Mode)**
+  - `OrderFulfillmentSagaManager` coordinating the distributed multi-step workflow: Reserve Inventory -> Authorize Payment -> Complete Order.
+  - Saga state persistence in PostgreSQL via `saga_instances` table and Flyway `V3__init_saga_and_dlq_schema.sql`.
+  - Automated Compensating Transactions:
+    - If payment authorization fails: triggers `ReleaseInventoryCommand` rollback and marks order `CANCELLED`.
+    - If inventory reservation fails: cancels order immediately without requesting payment.
+  - Simulated downstream microservices (`SimulatedInventoryService` and `SimulatedPaymentService`) with configurable failure scenarios.
+  - Dead Letter Queue (`order.events.dlq`) and topics (`inventory.commands`, `inventory.replies`, `payment.commands`, `payment.replies`).
+  - Quality Gate: Comprehensive integration tests covering Happy Path fulfillment, payment failure compensation, and inventory out-of-stock rollback.
 - [ ] **Level 4: Enterprise Production-Ready (Observability, CQRS & Resilience)** *(Planned)*
 
 ---

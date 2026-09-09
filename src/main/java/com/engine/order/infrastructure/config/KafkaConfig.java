@@ -18,16 +18,43 @@ import java.util.Map;
 public class KafkaConfig {
 
     public static final String ORDER_EVENTS_TOPIC = "order.events";
+    public static final String ORDER_EVENTS_DLQ_TOPIC = "order.events.dlq";
+    public static final String INVENTORY_COMMANDS_TOPIC = "inventory.commands";
+    public static final String INVENTORY_REPLIES_TOPIC = "inventory.replies";
+    public static final String PAYMENT_COMMANDS_TOPIC = "payment.commands";
+    public static final String PAYMENT_REPLIES_TOPIC = "payment.replies";
 
     @Value("${spring.kafka.bootstrap-servers:localhost:9092}")
     private String bootstrapServers;
 
     @Bean
     public NewTopic orderEventsTopic() {
-        return TopicBuilder.name(ORDER_EVENTS_TOPIC)
-                .partitions(3)
-                .replicas(1)
-                .build();
+        return TopicBuilder.name(ORDER_EVENTS_TOPIC).partitions(3).replicas(1).build();
+    }
+
+    @Bean
+    public NewTopic orderEventsDlqTopic() {
+        return TopicBuilder.name(ORDER_EVENTS_DLQ_TOPIC).partitions(1).replicas(1).build();
+    }
+
+    @Bean
+    public NewTopic inventoryCommandsTopic() {
+        return TopicBuilder.name(INVENTORY_COMMANDS_TOPIC).partitions(3).replicas(1).build();
+    }
+
+    @Bean
+    public NewTopic inventoryRepliesTopic() {
+        return TopicBuilder.name(INVENTORY_REPLIES_TOPIC).partitions(3).replicas(1).build();
+    }
+
+    @Bean
+    public NewTopic paymentCommandsTopic() {
+        return TopicBuilder.name(PAYMENT_COMMANDS_TOPIC).partitions(3).replicas(1).build();
+    }
+
+    @Bean
+    public NewTopic paymentRepliesTopic() {
+        return TopicBuilder.name(PAYMENT_REPLIES_TOPIC).partitions(3).replicas(1).build();
     }
 
     @Bean
