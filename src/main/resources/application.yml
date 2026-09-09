@@ -61,6 +61,8 @@ app:
     jwt:
       secret: engine-order-processing-super-secure-jwt-hmac-secret-key-32b
       validity-ms: 86400000
+  ratelimit:
+    enabled: true
 
 server:
   port: 8080
