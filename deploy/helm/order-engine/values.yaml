@@ -1,0 +1,150 @@
+# Default values for order-engine Helm Chart.
+# Declare variables to be passed into templates.
+
+replicaCount: 2
+
+image:
+  repository: ghcr.io/alexandrmotologa/event-driven-order-engine
+  pullPolicy: IfNotPresent
+  tag: "1.0.0"
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  automount: true
+  annotations: {}
+  name: ""
+
+podAnnotations:
+  prometheus.io/scrape: "true"
+  prometheus.io/path: "/actuator/prometheus"
+  prometheus.io/port: "8080"
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 10001
+  runAsGroup: 10001
+  fsGroup: 10001
+
+securityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+  readOnlyRootFilesystem: false
+
+service:
+  type: ClusterIP
+  port: 8080
+  targetPort: 8080
+
+ingress:
+  enabled: false
+  className: "nginx"
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-body-size: "16m"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+  hosts:
+    - host: order-engine.local
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+
+resources:
+  limits:
+    cpu: 2000m
+    memory: 2Gi
+  requests:
+    cpu: 500m
+    memory: 1Gi
+
+jvm:
+  opts: "-XX:+UseZGC -XX:+ZGenerational -XX:MaxRAMPercentage=75.0 -Djava.security.egd=file:/dev/./urandom"
+
+env:
+  springProfilesActive: "prod"
+  serverPort: 8080
+  datasource:
+    url: "jdbc:postgresql://postgres-postgresql.database.svc.cluster.local:5432/order_db"
+    username: "postgres"
+    password: "changeit"
+    hikari:
+      maximumPoolSize: 20
+      minimumIdle: 5
+  kafka:
+    bootstrapServers: "kafka-cluster-kafka-bootstrap.kafka.svc.cluster.local:9092"
+    consumerGroupId: "order-processing-group"
+  outbox:
+    schedulerRateMs: 500
+    batchSize: 100
+  saga:
+    timeoutThresholdSeconds: 30
+    schedulerRateMs: 5000
+  security:
+    enabled: true
+    adminToken: "admin-k8s-secret-token"
+    opsToken: "ops-k8s-secret-token"
+  rateLimit:
+    enabled: true
+    standardCapacity: 60
+    enterpriseCapacity: 600
+
+probes:
+  liveness:
+    path: /actuator/health/liveness
+    port: 8080
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    timeoutSeconds: 3
+    failureThreshold: 3
+  readiness:
+    path: /actuator/health/readiness
+    port: 8080
+    initialDelaySeconds: 20
+    periodSeconds: 5
+    timeoutSeconds: 3
+    failureThreshold: 2
+
+# KEDA (Kubernetes Event-driven Autoscaling)
+keda:
+  enabled: true
+  minReplicaCount: 2
+  maxReplicaCount: 10
+  pollingInterval: 15
+  cooldownPeriod: 300
+  triggers:
+    - type: kafka
+      metadata:
+        bootstrapServers: "kafka-cluster-kafka-bootstrap.kafka.svc.cluster.local:9092"
+        consumerGroup: "order-processing-group"
+        topic: "order.events"
+        lagThreshold: "10"
+        offsetResetPolicy: "latest"
+
+# Standard CPU/Memory HPA (fallback if KEDA is disabled)
+autoscaling:
+  enabled: false
+  minReplicas: 2
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 80
+  targetMemoryUtilizationPercentage: 80
+
+nodeSelector: {}
+tolerations: []
+affinity:
+  podAntiAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        podAffinityTerm:
+          labelSelector:
+            matchExpressions:
+              - key: app.kubernetes.io/name
+                operator: In
+                values:
+                  - order-engine
+          topologyKey: kubernetes.io/hostname

@@ -143,6 +143,49 @@ stateDiagram-v2
   - **GitHub Actions CI/CD Pipeline**:
     - Automated pipeline `.github/workflows/ci.yml` running on push/PR: Java 21 environment setup, full test suite execution, ArchUnit architectural enforcement, and multi-stage Docker build verification.
   - **Quality Gate**: `SecurityRbacIntegrationTest` validating 401 Unauthorized, 403 Forbidden, 200 OK for Customer/Admin roles, and public route access.
+- [x] **Level 9: Operational DLQ Redrive Management & Poison Pill Console**
+  - **Dead Letter Queue Persistence**:
+    - Flyway database migration `V6__init_dlq_management.sql` creating `dlq_messages` table tracking payload, error details, retry count, and lifecycle state (`PENDING`, `REPLAYED`, `DISCARDED`).
+    - Dedicated Kafka listener `OrderEventsDlqConsumer` ingesting poison pills from `order.events.dlq`.
+  - **Operational Self-Healing API & Dashboard Console**:
+    - Endpoints: `GET /api/v1/dlq/messages`, `POST /api/v1/dlq/{id}/redrive`, `POST /api/v1/dlq/{id}/patch-and-retry`, `DELETE /api/v1/dlq/{id}`.
+    - Interactive Dashboard Console with real-time poison pill counters, status filtering, and single-click redrive.
+  - **Quality Gate**: `DlqRedriveIntegrationTest` testing poison pill capture, re-dispatch to main topic, and message discard.
+- [x] **Level 10: Chaos Engineering & Fault Injection Engine**
+  - **Dynamic In-Memory Fault Controller**:
+    - `ChaosEngineConfig` holding thread-safe parameters: artificial network latency (ms), random payment failure rate (%), and payment gateway outage (503).
+    - Injected directly into `ResilientPaymentClient` to test distributed resiliency under simulated fire.
+  - **Circuit Breaker Trip & Recovery**:
+    - Verifies Resilience4j Circuit Breaker transitions from `CLOSED` to `OPEN`, fallback activation, and automatic recovery back to `CLOSED`.
+    - Management API: `POST /api/v1/chaos/configure`, `GET /api/v1/chaos/status`, `POST /api/v1/chaos/reset`.
+  - **Quality Gate**: `ChaosEngineeringIntegrationTest` verifying end-to-end fault injection, circuit trip, and self-healing.
+- [x] **Level 11: Distributed Rate Limiting & Multi-Tenancy**
+  - **Multi-Tenant Resolution & Context**:
+    - `TenantContext` extracting and enforcing `X-Tenant-Id` per request (e.g., `TENANT-DEFAULT`, `TENANT-ENTERPRISE-001`).
+  - **Token Bucket Rate Limiting**:
+    - High-throughput, thread-safe token bucket algorithm (`TokenBucketRateLimiterService`) supporting configurable tier allowances (Standard 60 req/min vs Enterprise 600 req/min).
+    - Throttling responses return `HTTP 429 Too Many Requests` compliant with RFC 7807 `ProblemDetail` and an accurate `Retry-After` header.
+    - SSE streams (`/api/v1/orders/*/live` and `/api/v1/orders/live`) are exempt to ensure stable long-lived connections.
+  - **Quality Gate**: `RateLimitingAndMultiTenancyIntegrationTest` validating tenant isolation and 429 throttling.
+- [x] **Level 12: High-Throughput Load Testing & Performance Benchmark Kit**
+  - **Automated k6 Test Suite (`benchmarks/`)**:
+    - `k6-smoke-test.js`: Rapid baseline check (10 virtual users).
+    - `k6-spike-test.js`: Burst test spiking from 50 to 1,000 concurrent VUs in 10s.
+    - `k6-endurance-test.js`: Sustained high-throughput endurance testing over 5 minutes.
+  - **Cross-Platform Test Runners**:
+    - `benchmarks/run-benchmarks.sh` (Linux/macOS) and `benchmarks/run-benchmarks.ps1` (Windows PowerShell).
+  - **JVM Performance Tuning Guide**:
+    - `docs/performance-benchmarks.md` detailing Virtual Threads concurrency, Generational ZGC pause times (< 1ms), and memory allocation efficiency.
+- [x] **Level 13: Cloud-Native Kubernetes Deployment & KEDA Kafka Lag Autoscaler**
+  - **Production Helm 3 Chart (`deploy/helm/order-engine/`)**:
+    - Complete package with `Chart.yaml`, `values.yaml`, ConfigMaps, Secrets, Services, and Ingress templates.
+    - Zero-downtime rolling update strategy (`maxSurge: 1`, `maxUnavailable: 0`) with `preStop` hook for connection draining.
+    - Actuator liveness and readiness health probes (`/actuator/health/liveness`, `/actuator/health/readiness`).
+  - **KEDA Event-Driven Autoscaling**:
+    - `keda.sh/v1alpha1` `ScaledObject` monitoring consumer group lag on `order.events`.
+    - Automatically scales deployment from 2 to 10 pods when lag exceeds threshold, bypassing CPU-based autoscaling bottlenecks.
+  - **Cloud-Native Guide**:
+    - Complete operational manual in `docs/kubernetes-and-keda.md`.
 
 ---
 
@@ -150,13 +193,14 @@ stateDiagram-v2
 
 - **Language**: Java 21 LTS (Virtual Threads, Records, Sealed Interfaces, Pattern Matching)
 - **Framework**: Spring Boot 3.3+
-- **Database**: PostgreSQL 16+ (with Flyway migrations V1–V4)
+- **Database**: PostgreSQL 16+ (with Flyway migrations V1–V6)
 - **Messaging**: Apache Kafka 3.7+ (KRaft mode)
-- **Resilience**: Resilience4j 2.2.0 (CircuitBreaker, Retry, Fallback)
+- **Autoscaling**: KEDA 2.14+ (Kafka Lag ScaledObject) & Kubernetes Helm 3
+- **Resilience & Chaos**: Resilience4j 2.2.0 (CircuitBreaker, Retry, Fallback) & Chaos Engine
 - **Observability**: Micrometer, OpenTelemetry OTLP, Prometheus, Grafana, Jaeger
 - **Architecture Enforcement**: ArchUnit 1.3.0
 - **Documentation**: SpringDoc OpenAPI 2.6.0 / Swagger UI
-- **Testing**: JUnit 5, AssertJ, Mockito, Spring Kafka Test, EmbeddedKafka
+- **Testing & Benchmarking**: JUnit 5, AssertJ, Mockito, Spring Kafka Test, EmbeddedKafka, Grafana k6
 
 ---
 
@@ -190,15 +234,18 @@ Services exposed:
 ```
 
 The application will start on `http://localhost:8080`.
+- Live Visualizer & Control Dashboard: [http://localhost:8080/dashboard](http://localhost:8080/dashboard)
 - Swagger UI: [http://localhost:8080/swagger-ui.html](http://localhost:8080/swagger-ui.html)
 - Actuator Health Probes: [http://localhost:8080/actuator/health](http://localhost:8080/actuator/health)
 - Prometheus Metrics: [http://localhost:8080/actuator/prometheus](http://localhost:8080/actuator/prometheus)
 
-
 ---
 
 ## 📚 Documentation
-- [Master Project Plan](docs/master_project_plan_java_event_driven.md)
 - [Hexagonal Architecture & Boundaries](docs/architecture.md)
 - [Domain State Machine Specification](docs/state-machine.md)
 - [REST API Specification](docs/api-spec.md)
+- [Saga Orchestration & Event Sourcing](docs/saga-and-event-sourcing.md)
+- [Performance Benchmarking with k6](docs/performance-benchmarks.md)
+- [Kubernetes Deployment & KEDA Kafka Autoscaling](docs/kubernetes-and-keda.md)
+

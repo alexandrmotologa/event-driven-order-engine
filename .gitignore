@@ -33,3 +33,7 @@ Thumbs.db
 
 ### Log files ###
 *.log
+
+# Excluded documentation / plans
+docs/master_project_plan_java_event_driven.md
+

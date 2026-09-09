@@ -251,3 +251,99 @@ All error responses adhere to RFC 7807 `ProblemDetail` with standardized types:
   "toState": "CANCELLED"
 }
 ```
+
+### 429 Too Many Requests (Rate Limit Exceeded)
+Returned when a tenant exhausts their token bucket allowance:
+- **Header**: `Retry-After: 1`
+```json
+{
+  "type": "https://api.engine.order.com/errors/rate-limit-exceeded",
+  "title": "Too Many Requests",
+  "status": 429,
+  "detail": "Rate limit exceeded for tenant [TENANT-DEFAULT]. Standard tier allows 60 req/min.",
+  "instance": "/api/v1/orders"
+}
+```
+
+---
+
+## 8. Dead Letter Queue (DLQ) Management Endpoints
+
+### 8.1 List DLQ Messages
+- **Method**: `GET /api/v1/dlq/messages?status={PENDING|REPLAYED|DISCARDED}`
+- **Role Required**: `ROLE_ADMIN`
+- **Response (200 OK)**:
+```json
+[
+  {
+    "id": "c1f72a4d-88b1-4cfa-a7e8-316279f104d5",
+    "originalTopic": "order.events",
+    "partition": 0,
+    "offsetNum": 42,
+    "messageKey": "7b8f9e6a-b210-4497-b84e-862d665b18aa",
+    "payload": "{\"orderId\":\"7b8f9e6a-b210-4497-b84e-862d665b18aa\",\"eventType\":\"OrderCreatedEvent\"}",
+    "exceptionClass": "org.springframework.dao.DataIntegrityViolationException",
+    "errorMessage": "Simulated unhandled processing failure",
+    "status": "PENDING",
+    "retryCount": 0,
+    "createdAt": "2026-09-10T00:00:00Z",
+    "updatedAt": "2026-09-10T00:00:00Z"
+  }
+]
+```
+
+### 8.2 Redrive Message
+- **Method**: `POST /api/v1/dlq/{id}/redrive`
+- **Role Required**: `ROLE_ADMIN`
+- **Description**: Re-publishes the poisoned message to its original Kafka topic and transitions status to `REPLAYED`.
+
+### 8.3 Patch & Redrive Message
+- **Method**: `POST /api/v1/dlq/{id}/patch-and-retry`
+- **Role Required**: `ROLE_ADMIN`
+- **Request Body**:
+```json
+{
+  "patchedPayload": "{\"orderId\":\"...\",\"correctedField\":\"valid\"}"
+}
+```
+
+### 8.4 Discard Message
+- **Method**: `DELETE /api/v1/dlq/{id}`
+- **Role Required**: `ROLE_ADMIN`
+- **Description**: Marks the message as `DISCARDED`.
+
+---
+
+## 9. Chaos Engineering & Fault Injection Endpoints
+
+### 9.1 Configure Fault Parameters
+- **Method**: `POST /api/v1/chaos/configure`
+- **Role Required**: `ROLE_ADMIN`
+- **Request Body**:
+```json
+{
+  "latencyMs": 500,
+  "paymentFailureRate": 0.25,
+  "simulatePaymentOutage": false
+}
+```
+
+### 9.2 Retrieve Active Chaos Status
+- **Method**: `GET /api/v1/chaos/status`
+- **Role Required**: `ROLE_ADMIN`
+
+### 9.3 Reset Chaos to Healthy
+- **Method**: `POST /api/v1/chaos/reset`
+- **Role Required**: `ROLE_ADMIN`
+
+---
+
+## 10. Multi-Tenancy Context
+Clients may pass the `X-Tenant-Id` header to identify the calling tenant:
+```http
+X-Tenant-Id: TENANT-ENTERPRISE-001
+```
+Available tiers:
+- `TENANT-DEFAULT` / Standard: 60 requests / minute
+- `TENANT-ENTERPRISE-*` / Enterprise: 600 requests / minute
+

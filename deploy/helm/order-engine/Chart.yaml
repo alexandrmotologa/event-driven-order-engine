@@ -1,0 +1,19 @@
+apiVersion: v2
+name: order-engine
+description: High-Throughput Event-Driven Order Processing & Workflow Engine
+type: application
+version: 1.0.0
+appVersion: "1.0.0"
+keywords:
+  - spring-boot
+  - event-driven
+  - kafka
+  - saga
+  - keda
+  - zgc
+home: https://github.com/alexandrmotologa/event-driven-order-engine
+sources:
+  - https://github.com/alexandrmotologa/event-driven-order-engine
+maintainers:
+  - name: Alexandru Motologa
+    email: alexandrmotologa@users.noreply.github.com

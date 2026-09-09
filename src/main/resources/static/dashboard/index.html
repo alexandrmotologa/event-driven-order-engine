@@ -84,10 +84,31 @@
             color: var(--text-muted);
         }
 
-        .header-status {
+        .header-controls {
             display: flex;
             align-items: center;
-            gap: 1.5rem;
+            gap: 1rem;
+        }
+
+        .tenant-selector {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: var(--bg-surface-elevated);
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
+            padding: 0.35rem 0.75rem;
+            font-size: 0.75rem;
+        }
+
+        .tenant-selector select {
+            background: transparent;
+            border: none;
+            color: var(--accent-primary);
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 600;
+            outline: none;
+            cursor: pointer;
         }
 
         .connection-badge {
@@ -137,13 +158,13 @@
             margin: 0 auto;
             display: flex;
             flex-direction: column;
-            gap: 2rem;
+            gap: 1.75rem;
         }
 
         /* Top Metrics Row */
         .metrics-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             gap: 1rem;
         }
 
@@ -216,7 +237,7 @@
 
         .sim-buttons-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
             gap: 1rem;
         }
 
@@ -244,6 +265,7 @@
         .sim-btn.btn-payment-fail:hover { border-color: var(--accent-rose); background: rgba(244, 63, 94, 0.08); }
         .sim-btn.btn-stock-fail:hover { border-color: var(--accent-amber); background: rgba(245, 158, 11, 0.08); }
         .sim-btn.btn-timeout:hover { border-color: var(--accent-purple); background: rgba(168, 85, 247, 0.08); }
+        .sim-btn.btn-ratelimit:hover { border-color: #ec4899; background: rgba(236, 72, 153, 0.08); }
 
         .btn-title {
             font-weight: 700;
@@ -259,6 +281,90 @@
             color: var(--text-muted);
             line-height: 1.4;
         }
+
+        /* Chaos Monkey & DLQ Panel Layout */
+        .operations-grid {
+            display: grid;
+            grid-template-columns: 1fr 1.6fr;
+            gap: 1.5rem;
+        }
+
+        @media (max-width: 1200px) {
+            .operations-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .op-card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-subtle);
+            border-radius: 14px;
+            padding: 1.25rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .chaos-controls {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .chaos-row {
+            display: flex;
+            flex-direction: column;
+            gap: 0.35rem;
+        }
+
+        .chaos-row label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .chaos-row input[type="range"] {
+            accent-color: var(--accent-rose);
+            cursor: pointer;
+        }
+
+        .chaos-toggle-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.5rem 0.75rem;
+            background: var(--bg-surface-elevated);
+            border-radius: 8px;
+            border: 1px solid var(--border-subtle);
+            font-size: 0.8rem;
+        }
+
+        .btn-chaos-apply {
+            background: linear-gradient(135deg, #f43f5e, #e11d48);
+            color: #fff;
+            border: none;
+            padding: 0.6rem 1rem;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+
+        .btn-chaos-reset {
+            background: var(--bg-surface-elevated);
+            color: var(--text-main);
+            border: 1px solid var(--border-subtle);
+            padding: 0.6rem 1rem;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.8rem;
+            cursor: pointer;
+        }
+
+        .btn-chaos-apply:hover { opacity: 0.9; }
+        .btn-chaos-reset:hover { border-color: var(--accent-emerald); color: var(--accent-emerald); }
 
         /* Live Visual Saga Pipeline */
         .saga-pipeline-panel {
@@ -379,7 +485,7 @@
         .table-wrapper {
             flex: 1;
             overflow-y: auto;
-            margin-top: 1rem;
+            margin-top: 0.75rem;
         }
 
         table {
@@ -424,6 +530,22 @@
         .badge-failed { background: rgba(244, 63, 94, 0.15); color: #fb7185; border: 1px solid rgba(244, 63, 94, 0.3); }
         .badge-info { background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3); }
 
+        .btn-action-sm {
+            background: var(--bg-surface-elevated);
+            border: 1px solid var(--border-subtle);
+            color: var(--text-main);
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.7rem;
+            transition: all 0.2s;
+        }
+
+        .btn-action-sm:hover {
+            border-color: var(--accent-primary);
+            color: var(--accent-primary);
+        }
+
         /* Terminal Feed */
         .terminal-log {
             background: #06090f;
@@ -466,10 +588,18 @@
             <div class="brand-icon">⚡</div>
             <div class="brand-title">
                 <h1>Event-Driven Order Engine</h1>
-                <p>Real-Time Saga Orchestrator & CQRS Observability Center</p>
+                <p>Real-Time Saga Orchestrator, DLQ Console & Chaos Engineering</p>
             </div>
         </div>
-        <div class="header-status">
+        <div class="header-controls">
+            <div class="tenant-selector">
+                <span>🏢 Tenant:</span>
+                <select id="tenantSelect" onchange="changeTenant()">
+                    <option value="TENANT-DEFAULT">TENANT-DEFAULT (Std 60/m)</option>
+                    <option value="TENANT-ENTERPRISE-001">TENANT-ENTERPRISE-001 (600/m)</option>
+                    <option value="TENANT-THROTTLED-002">TENANT-THROTTLED-002</option>
+                </select>
+            </div>
             <div id="connectionStatus" class="connection-badge">
                 <span class="pulse-dot"></span>
                 <span id="connectionText">SSE Connecting...</span>
@@ -493,8 +623,16 @@
                 <div id="statCompensated" class="metric-value">0</div>
             </div>
             <div class="metric-card" style="--card-accent: #a855f7;">
-                <div class="metric-label">Stream Events Received</div>
+                <div class="metric-label">Stream Events</div>
                 <div id="statEventsCount" class="metric-value">0</div>
+            </div>
+            <div class="metric-card" style="--card-accent: #f97316;">
+                <div class="metric-label">DLQ Poison Pills</div>
+                <div id="statDlqCount" class="metric-value">0</div>
+            </div>
+            <div class="metric-card" style="--card-accent: #ec4899;">
+                <div class="metric-label">Chaos Status</div>
+                <div id="statChaosStatus" class="metric-value" style="font-size: 1.15rem; color: #10b981;">HEALTHY</div>
             </div>
         </div>
 
@@ -502,7 +640,7 @@
         <div class="control-panel">
             <div class="panel-header">
                 <h2>🎮 Distributed Workflow Scenarios (Live Simulators)</h2>
-                <span style="font-size: 0.75rem; color: var(--text-muted);">Click to trigger zero-delay distributed Saga execution</span>
+                <span style="font-size: 0.75rem; color: var(--text-muted);">Triggers zero-delay distributed Saga execution via HTTP & Kafka</span>
             </div>
             <div class="sim-buttons-grid">
                 <button class="sim-btn btn-happy" onclick="triggerScenario('HAPPY_PATH')">
@@ -511,16 +649,87 @@
                 </button>
                 <button class="sim-btn btn-payment-fail" onclick="triggerScenario('PAYMENT_FAIL')">
                     <div class="btn-title">🔴 2. Payment Failure & Rollback</div>
-                    <div class="btn-desc">Reserve inventory &rarr; Payment declined &rarr; Rollback & Release Inventory &rarr; Cancelled.</div>
+                    <div class="btn-desc">Reserve inventory &rarr; Payment declined &rarr; Compensate & Release Inventory &rarr; Cancelled.</div>
                 </button>
                 <button class="sim-btn btn-stock-fail" onclick="triggerScenario('STOCK_FAIL')">
                     <div class="btn-title">🟡 3. Out-of-Stock Rejection</div>
-                    <div class="btn-desc">Attempt reservation &rarr; Stock unavailable &rarr; Fast cancel without charging payment.</div>
+                    <div class="btn-desc">Attempt reservation &rarr; Stock unavailable &rarr; Fast cancel without charging.</div>
                 </button>
                 <button class="sim-btn btn-timeout" onclick="triggerScenario('TIMEOUT')">
                     <div class="btn-title">⏱️ 4. Dead-Man Switch (Timeout)</div>
                     <div class="btn-desc">Participant fails to reply &rarr; Timeout worker intervenes &rarr; Emergency compensation.</div>
                 </button>
+                <button class="sim-btn btn-ratelimit" onclick="triggerRateLimitBurst()">
+                    <div class="btn-title">⚡ 5. Rate Limit Burst (429 Test)</div>
+                    <div class="btn-desc">Fires 70 rapid requests to test Token Bucket throttling & Retry-After response.</div>
+                </button>
+            </div>
+        </div>
+
+        <!-- Operations Center: Chaos Engineering & DLQ Console -->
+        <div class="operations-grid">
+            <!-- Chaos Monkey Panel -->
+            <div class="op-card">
+                <div class="panel-header" style="margin-bottom: 0.5rem;">
+                    <h2>🐒 Chaos Engineering & Fault Injection</h2>
+                    <span id="chaosIndicator" class="badge badge-success">HEALTHY</span>
+                </div>
+                <div class="chaos-controls">
+                    <div class="chaos-row">
+                        <label>
+                            <span>Artificial Network Latency:</span>
+                            <span id="labelLatency" style="color: var(--accent-primary); font-family: 'JetBrains Mono', monospace;">0 ms</span>
+                        </label>
+                        <input type="range" id="inputLatency" min="0" max="2500" step="50" value="0" oninput="updateChaosLabels()">
+                    </div>
+                    <div class="chaos-row">
+                        <label>
+                            <span>Payment Failure Rate:</span>
+                            <span id="labelFailureRate" style="color: var(--accent-rose); font-family: 'JetBrains Mono', monospace;">0 %</span>
+                        </label>
+                        <input type="range" id="inputFailureRate" min="0" max="100" step="5" value="0" oninput="updateChaosLabels()">
+                    </div>
+                    <div class="chaos-toggle-row">
+                        <span>🔥 Simulate 503 Payment Gateway Outage</span>
+                        <input type="checkbox" id="inputOutage" onchange="updateChaosLabels()" style="width: 18px; height: 18px; cursor: pointer;">
+                    </div>
+                    <div style="display: flex; gap: 0.75rem; margin-top: 0.5rem;">
+                        <button class="btn-chaos-apply" onclick="applyChaosConfig()" style="flex: 1;">⚡ Apply Faults</button>
+                        <button class="btn-chaos-reset" onclick="resetChaosConfig()" style="flex: 1;">🛡️ Reset Healthy</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- DLQ Redrive Console -->
+            <div class="op-card">
+                <div class="panel-header" style="margin-bottom: 0.5rem;">
+                    <h2>☠️ Dead Letter Queue (DLQ) & Poison Pill Console</h2>
+                    <div style="display: flex; gap: 0.5rem;">
+                        <select id="dlqStatusFilter" onchange="loadDlqMessages()" style="background: var(--bg-surface-elevated); border: 1px solid var(--border-subtle); color: var(--text-main); padding: 0.2rem 0.5rem; border-radius: 6px; font-size: 0.75rem;">
+                            <option value="">Status: ALL</option>
+                            <option value="PENDING" selected>Status: PENDING</option>
+                            <option value="REPLAYED">Status: REPLAYED</option>
+                            <option value="DISCARDED">Status: DISCARDED</option>
+                        </select>
+                        <button onclick="loadDlqMessages()" style="background: transparent; border: 1px solid var(--border-subtle); color: var(--text-muted); padding: 0.2rem 0.6rem; border-radius: 6px; cursor: pointer; font-size: 0.75rem;">Refresh</button>
+                    </div>
+                </div>
+                <div class="table-wrapper" style="max-height: 230px;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>DLQ ID</th>
+                                <th>Topic</th>
+                                <th>Reason</th>
+                                <th>Status</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="dlqTableBody">
+                            <tr><td colspan="5" style="text-align: center; color: var(--text-muted);">No dead letter messages in queue.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
 
@@ -599,6 +808,44 @@
     <script>
         let eventCount = 0;
         let activeOrderId = null;
+        let currentTenant = 'TENANT-DEFAULT';
+        let adminAuthToken = null;
+
+        function changeTenant() {
+            currentTenant = document.getElementById('tenantSelect').value;
+            addTerminalLog('TENANT', `Switched active tenant context to: ${currentTenant}`);
+        }
+
+        // Auto-negotiate admin JWT token for privileged controls
+        async function ensureAuthToken() {
+            if (adminAuthToken) return adminAuthToken;
+            try {
+                const res = await fetch('/api/v1/auth/token', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username: 'dashboard-admin', role: 'ADMIN' })
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    adminAuthToken = data.token;
+                    return adminAuthToken;
+                }
+            } catch (err) {
+                console.warn('Auth token auto-negotiation bypassed:', err.message);
+            }
+            return null;
+        }
+
+        function getAuthHeaders() {
+            const headers = {
+                'Content-Type': 'application/json',
+                'X-Tenant-Id': currentTenant
+            };
+            if (adminAuthToken) {
+                headers['Authorization'] = 'Bearer ' + adminAuthToken;
+            }
+            return headers;
+        }
 
         // Initialize Server-Sent Events (SSE)
         function initSse() {
@@ -621,7 +868,6 @@
                 handleIncomingEvent(e.data);
             };
 
-            // Listen to known event types
             const eventTypes = [
                 'OrderCreatedEvent', 'OrderValidatedEvent', 'OrderPaymentPendingEvent',
                 'OrderPaidEvent', 'OrderInventoryAllocatedEvent', 'OrderCompletedEvent',
@@ -648,8 +894,8 @@
                     updateVisualPipeline(data.status, data.sagaStatus);
                 }
 
-                // Refresh CQRS table on state changes
                 loadCqrsSummaries();
+                loadDlqMessages();
             } catch (err) {
                 console.error('Error parsing SSE event:', err);
             }
@@ -662,8 +908,9 @@
             div.className = 'log-entry';
 
             let color = '#38bdf8';
-            if (type.includes('Fail') || type.includes('Cancel') || type.includes('TIMEOUT')) color = '#f43f5e';
+            if (type.includes('Fail') || type.includes('Cancel') || type.includes('TIMEOUT') || type.includes('CHAOS') || type.includes('429')) color = '#f43f5e';
             else if (type.includes('Completed') || type.includes('Paid') || type.includes('Reserved')) color = '#10b981';
+            else if (type.includes('REDRIVE') || type.includes('DLQ')) color = '#f97316';
 
             div.innerHTML = `
                 <span class="log-time">[${time}]</span>
@@ -676,6 +923,8 @@
 
         // Trigger Distributed Workflows
         async function triggerScenario(scenario) {
+            await ensureAuthToken();
+
             let sku = 'SKU-SMARTPHONE-PRO';
             let price = 299.00;
             let qty = 1;
@@ -703,15 +952,15 @@
             };
 
             try {
-                addTerminalLog('SIMULATOR', `Launching ${scenario} workflow...`);
+                addTerminalLog('SIMULATOR', `Launching ${scenario} for [${currentTenant}]...`);
                 resetVisualPipeline();
+
+                const headers = getAuthHeaders();
+                headers['Idempotency-Key'] = crypto.randomUUID();
 
                 const res = await fetch('/api/v1/orders', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Idempotency-Key': crypto.randomUUID()
-                    },
+                    headers: headers,
                     body: JSON.stringify(payload)
                 });
 
@@ -720,13 +969,212 @@
                     activeOrderId = order.orderId;
                     document.getElementById('activeOrderIdDisplay').innerText = `Order: ${activeOrderId}`;
                     updateVisualPipeline('CREATED', 'STARTED');
-                    addTerminalLog('HTTP', `Order created successfully with ID: ${activeOrderId}`);
+                    addTerminalLog('HTTP', `Order created successfully: ${activeOrderId}`);
                     loadCqrsSummaries();
                 } else {
-                    addTerminalLog('HTTP_ERROR', 'Failed to create order: ' + res.status);
+                    addTerminalLog('HTTP_ERROR', `Status: ${res.status}`);
                 }
             } catch (err) {
-                addTerminalLog('ERROR', 'Error calling API: ' + err.message);
+                addTerminalLog('ERROR', 'Call failed: ' + err.message);
+            }
+        }
+
+        // Test 429 Token Bucket Throttling
+        async function triggerRateLimitBurst() {
+            await ensureAuthToken();
+            addTerminalLog('BURST_TEST', `Firing 70 rapid concurrent requests for [${currentTenant}]...`);
+            let rejectedCount = 0;
+            let acceptedCount = 0;
+
+            const promises = Array.from({ length: 70 }).map(async (_, idx) => {
+                try {
+                    const headers = getAuthHeaders();
+                    headers['Idempotency-Key'] = crypto.randomUUID();
+                    const res = await fetch('/api/v1/orders', {
+                        method: 'POST',
+                        headers: headers,
+                        body: JSON.stringify({
+                            customerId: 'CUST-BURST',
+                            items: [{ sku: 'SKU-BURST', productName: 'Burst Item', quantity: 1, unitPrice: 10.0, currency: 'USD' }]
+                        })
+                    });
+                    if (res.status === 429) {
+                        rejectedCount++;
+                        const retryAfter = res.headers.get('Retry-After');
+                        if (rejectedCount === 1) {
+                            addTerminalLog('RATE_LIMIT_429', `Throttled! Status 429 Too Many Requests. Retry-After: ${retryAfter}s`);
+                        }
+                    } else if (res.ok) {
+                        acceptedCount++;
+                    }
+                } catch (e) {
+                    // ignore network errors during burst
+                }
+            });
+
+            await Promise.all(promises);
+            addTerminalLog('BURST_SUMMARY', `Accepted: ${acceptedCount} | Throttled (429): ${rejectedCount}`);
+            loadCqrsSummaries();
+        }
+
+        // Chaos Engineering Controls
+        function updateChaosLabels() {
+            const lat = document.getElementById('inputLatency').value;
+            const fail = document.getElementById('inputFailureRate').value;
+            document.getElementById('labelLatency').innerText = `${lat} ms`;
+            document.getElementById('labelFailureRate').innerText = `${fail} %`;
+        }
+
+        async function applyChaosConfig() {
+            await ensureAuthToken();
+            const latencyMs = parseInt(document.getElementById('inputLatency').value);
+            const failureRate = parseFloat(document.getElementById('inputFailureRate').value) / 100.0;
+            const outage = document.getElementById('inputOutage').checked;
+
+            try {
+                const res = await fetch('/api/v1/chaos/configure', {
+                    method: 'POST',
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify({
+                        latencyMs: latencyMs,
+                        paymentFailureRate: failureRate,
+                        simulatePaymentOutage: outage
+                    })
+                });
+
+                if (res.ok) {
+                    addTerminalLog('CHAOS', `Config applied: Latency ${latencyMs}ms | Fail ${Math.round(failureRate*100)}% | Outage: ${outage}`);
+                    loadChaosStatus();
+                } else {
+                    addTerminalLog('CHAOS_ERROR', `Status: ${res.status}`);
+                }
+            } catch (err) {
+                addTerminalLog('CHAOS_ERROR', err.message);
+            }
+        }
+
+        async function resetChaosConfig() {
+            await ensureAuthToken();
+            try {
+                const res = await fetch('/api/v1/chaos/reset', {
+                    method: 'POST',
+                    headers: getAuthHeaders()
+                });
+                if (res.ok) {
+                    document.getElementById('inputLatency').value = 0;
+                    document.getElementById('inputFailureRate').value = 0;
+                    document.getElementById('inputOutage').checked = false;
+                    updateChaosLabels();
+                    addTerminalLog('CHAOS', 'All chaos faults reset. System restored to HEALTHY.');
+                    loadChaosStatus();
+                }
+            } catch (err) {
+                addTerminalLog('CHAOS_ERROR', err.message);
+            }
+        }
+
+        async function loadChaosStatus() {
+            await ensureAuthToken();
+            try {
+                const res = await fetch('/api/v1/chaos/status', {
+                    headers: getAuthHeaders()
+                });
+                if (!res.ok) return;
+                const data = await res.json();
+
+                const isChaos = data.latencyMs > 0 || data.paymentFailureRate > 0 || data.simulatePaymentOutage;
+                const statElem = document.getElementById('statChaosStatus');
+                const badgeElem = document.getElementById('chaosIndicator');
+
+                if (isChaos) {
+                    statElem.innerText = 'FAULT ACTIVE';
+                    statElem.style.color = '#f43f5e';
+                    badgeElem.className = 'badge badge-failed';
+                    badgeElem.innerText = 'CHAOS ACTIVE';
+                } else {
+                    statElem.innerText = 'HEALTHY';
+                    statElem.style.color = '#10b981';
+                    badgeElem.className = 'badge badge-success';
+                    badgeElem.innerText = 'HEALTHY';
+                }
+            } catch (err) {
+                console.error('Error fetching chaos status:', err);
+            }
+        }
+
+        // DLQ Management Controls
+        async function loadDlqMessages() {
+            await ensureAuthToken();
+            try {
+                const filter = document.getElementById('dlqStatusFilter').value;
+                const url = filter ? `/api/v1/dlq/messages?status=${filter}` : '/api/v1/dlq/messages';
+                const res = await fetch(url, { headers: getAuthHeaders() });
+                if (!res.ok) return;
+                const messages = await res.json();
+
+                document.getElementById('statDlqCount').innerText = messages.filter(m => m.status === 'PENDING').length;
+
+                const tbody = document.getElementById('dlqTableBody');
+                if (messages.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--text-muted);">No messages found.</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = messages.map(msg => {
+                    let badgeClass = 'badge-pending';
+                    if (msg.status === 'REPLAYED') badgeClass = 'badge-success';
+                    else if (msg.status === 'DISCARDED') badgeClass = 'badge-failed';
+
+                    return `
+                        <tr>
+                            <td style="color: var(--accent-primary);">${msg.id.substring(0, 8)}...</td>
+                            <td>${msg.originalTopic}</td>
+                            <td style="max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${msg.errorMessage || msg.exceptionClass}">${msg.errorMessage || msg.exceptionClass}</td>
+                            <td><span class="badge ${badgeClass}">${msg.status}</span></td>
+                            <td>
+                                ${msg.status === 'PENDING' ? `
+                                    <button class="btn-action-sm" onclick="redriveDlq('${msg.id}')" title="Re-inject to topic">🔄 Redrive</button>
+                                    <button class="btn-action-sm" onclick="discardDlq('${msg.id}')" title="Discard">🗑️</button>
+                                ` : `<span style="color: var(--text-muted);">-</span>`}
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+            } catch (err) {
+                console.error('Error loading DLQ messages:', err);
+            }
+        }
+
+        async function redriveDlq(id) {
+            await ensureAuthToken();
+            try {
+                addTerminalLog('DLQ_REDRIVE', `Redriving message ${id.substring(0, 8)}...`);
+                const res = await fetch(`/api/v1/dlq/${id}/redrive`, {
+                    method: 'POST',
+                    headers: getAuthHeaders()
+                });
+                if (res.ok) {
+                    addTerminalLog('DLQ_SUCCESS', `Message ${id.substring(0, 8)} re-driven to original topic.`);
+                    loadDlqMessages();
+                }
+            } catch (err) {
+                addTerminalLog('DLQ_ERROR', err.message);
+            }
+        }
+
+        async function discardDlq(id) {
+            await ensureAuthToken();
+            try {
+                const res = await fetch(`/api/v1/dlq/${id}`, {
+                    method: 'DELETE',
+                    headers: getAuthHeaders()
+                });
+                if (res.ok) {
+                    addTerminalLog('DLQ_DISCARD', `Message ${id.substring(0, 8)} discarded.`);
+                    loadDlqMessages();
+                }
+            } catch (err) {
+                addTerminalLog('DLQ_ERROR', err.message);
             }
         }
 
@@ -789,8 +1237,9 @@
         }
 
         async function loadCqrsSummaries() {
+            await ensureAuthToken();
             try {
-                const res = await fetch('/api/v1/orders/summary');
+                const res = await fetch('/api/v1/orders/summary', { headers: getAuthHeaders() });
                 if (!res.ok) return;
                 const data = await res.json();
 
@@ -837,10 +1286,14 @@
         }
 
         // Boot
-        window.addEventListener('DOMContentLoaded', () => {
+        window.addEventListener('DOMContentLoaded', async () => {
+            await ensureAuthToken();
             initSse();
             loadCqrsSummaries();
+            loadChaosStatus();
+            loadDlqMessages();
             setInterval(loadCqrsSummaries, 4000);
+            setInterval(loadDlqMessages, 6000);
         });
     </script>
 </body>
