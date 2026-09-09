@@ -21,13 +21,16 @@ public class OutboxEventPublisherAdapter implements EventPublisherPort {
 
     private final OutboxJpaRepository outboxJpaRepository;
     private final ObjectMapper objectMapper;
+    private final com.engine.order.application.port.out.EventStorePort eventStorePort;
 
     public OutboxEventPublisherAdapter(
             OutboxJpaRepository outboxJpaRepository,
-            ObjectMapper objectMapper
+            ObjectMapper objectMapper,
+            com.engine.order.application.port.out.EventStorePort eventStorePort
     ) {
         this.outboxJpaRepository = Objects.requireNonNull(outboxJpaRepository, "outboxJpaRepository must not be null");
         this.objectMapper = Objects.requireNonNull(objectMapper, "objectMapper must not be null");
+        this.eventStorePort = Objects.requireNonNull(eventStorePort, "eventStorePort must not be null");
     }
 
     @Override
@@ -44,8 +47,20 @@ public class OutboxEventPublisherAdapter implements EventPublisherPort {
             );
 
             outboxJpaRepository.save(outboxEntity);
-            log.info("Transactional Outbox: Persisted event [{}] with ID [{}] for order [{}]",
-                    event.getClass().getSimpleName(), event.eventId(), event.orderId().value());
+
+            // Append to immutable Event Store with sequential version
+            long nextSeq = eventStorePort.getNextSequenceNumber(event.orderId().value());
+            eventStorePort.append(
+                    event.eventId(),
+                    event.orderId().value(),
+                    nextSeq,
+                    event.getClass().getSimpleName(),
+                    jsonPayload,
+                    null
+            );
+
+            log.info("Transactional Outbox: Persisted event [{}] with ID [{}] (seq {}) for order [{}]",
+                    event.getClass().getSimpleName(), event.eventId(), nextSeq, event.orderId().value());
         } catch (JsonProcessingException ex) {
             log.error("Failed to serialize domain event: {}", event, ex);
             throw new RuntimeException("Failed to serialize domain event for outbox", ex);
