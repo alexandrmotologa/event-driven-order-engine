@@ -24,7 +24,7 @@
 
 ---
 
-## 🏛 Architectural Blueprint
+## Architecture Blueprint
 
 Built with strict **Hexagonal Architecture (Ports and Adapters)** and **Domain-Driven Design (DDD)**:
 
@@ -48,7 +48,7 @@ com.engine.order/
 
 ---
 
-## 🔄 Deterministic Domain State Machine
+## Domain State Machine
 
 The order lifecycle transitions through well-defined, immutable states enforced by domain invariants:
 
@@ -73,7 +73,7 @@ stateDiagram-v2
 
 ---
 
-## 🚀 Features by Level
+## Feature Levels
 
 - [x] **Level 1: Pure Hexagonal Core & Deterministic State Machine**
   - Pure Java 21 domain aggregate with zero third-party dependencies.
@@ -224,7 +224,7 @@ stateDiagram-v2
 
 ---
 
-## 🛠 Tech Stack
+## Tech Stack
 
 - **Language**: Java 21 LTS (Virtual Threads, Records, Sealed Interfaces, Pattern Matching)
 - **Framework**: Spring Boot 3.3+
@@ -239,7 +239,7 @@ stateDiagram-v2
 
 ---
 
-## ⚡ Getting Started
+## Getting Started
 
 ### Prerequisites
 - JDK 21+ installed and configured on `PATH`
@@ -277,7 +277,7 @@ The application will start on `http://localhost:8080`.
 
 ---
 
-## 📚 Documentation
+## Documentation
 - [Hexagonal Architecture & Boundaries](docs/architecture.md)
 - [Domain State Machine Specification](docs/state-machine.md)
 - [REST API Specification](docs/api-spec.md)
@@ -289,7 +289,12 @@ The application will start on `http://localhost:8080`.
 
 ---
 
-## 📄 License
+## Contributing
+
+Please review [CONTRIBUTING.md](CONTRIBUTING.md) for contribution guidelines, architecture checks with ArchUnit, and pull request procedures.
+
+---
+
+## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
