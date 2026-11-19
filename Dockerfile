@@ -15,7 +15,7 @@ RUN mvn clean package -DskipTests -B
 
 # Extract layered jar for fast container startups
 WORKDIR /workspace/target
-RUN java -Djarmode=layertools -jar event-driven-order-engine-1.0.0-SNAPSHOT.jar extract
+RUN JAR_FILE=$(ls event-driven-order-engine*.jar | grep -v '\.original$' | head -n 1) && java -Djarmode=layertools -jar "$JAR_FILE" extract
 
 # ============================================================================
 # Stage 2: Minimal Distroless / Alpine Runtime
