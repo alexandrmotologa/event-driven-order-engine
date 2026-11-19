@@ -19,8 +19,20 @@
 </p>
 
 <p align="center">
-  <img src="docs/images/dashboard-live-overview.png" alt="Event-Driven Order Engine Live Dashboard" />
+  <img src="docs/images/event-driven-order-engine_demo.gif" alt="Event-Driven Order Engine Interactive Demo" width="850" style="border-radius: 10px; border: 1px solid #1e293b;" />
 </p>
+
+## Screenshots
+
+<details open>
+<summary><strong>Expand interface gallery</strong></summary>
+<br/>
+
+| Live Dashboard Overview | Saga Compensation Flow |
+| :---: | :---: |
+| ![Dashboard Live Overview](docs/images/dashboard-live-overview.png) | ![Saga Compensation Flow](docs/images/dashboard-saga-compensation.png) |
+
+</details>
 
 ---
 

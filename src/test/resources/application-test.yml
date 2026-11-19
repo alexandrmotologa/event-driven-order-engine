@@ -23,6 +23,9 @@ spring:
     problemdetails:
       enabled: true
   kafka:
+    admin:
+      auto-create: false
+      fail-fast: false
     listener:
       auto-startup: false
     consumer:

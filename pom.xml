@@ -13,7 +13,7 @@
 
     <groupId>com.engine.order</groupId>
     <artifactId>event-driven-order-engine</artifactId>
-    <version>1.0.0-SNAPSHOT</version>
+    <version>1.0.0</version>
     <name>event-driven-order-engine</name>
     <description>Enterprise Event-Driven Order Processing and Workflow Engine</description>
 
